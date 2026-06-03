@@ -1020,10 +1020,19 @@
 
     // === LEADERBOARD ===
     function subscribeLeaderboard() {
-      const q = query(collection(db, SCORES_COLLECTION), orderBy("correct", "desc"), limit(20));
+      const q = query(collection(db, SCORES_COLLECTION), orderBy("correct", "desc"), limit(50));
       const unsub = onSnapshot(q, (snap) => {
-        topScores = []; allScores = [];
-        snap.forEach(d => { const data = d.data(); topScores.push({ id: d.id, ...data }); allScores.push({ id: d.id, ...data }); });
+        allScores = [];
+        snap.forEach(d => { const data = d.data(); allScores.push({ id: d.id, ...data }); });
+        // Deduplicate: keep best score per user
+        const best = {};
+        allScores.forEach(s => {
+          const existing = best[s.uid];
+          if (!existing || s.correct > existing.correct || (s.correct === existing.correct && (s.accuracy || 0) > (existing.accuracy || 0))) {
+            best[s.uid] = s;
+          }
+        });
+        topScores = Object.values(best).sort((a, b) => b.correct - a.correct || (b.accuracy || 0) - (a.accuracy || 0)).slice(0, 20);
         renderLeaderboard();
       }, () => { lbEl.innerHTML = '<div class="lb-empty">DB error — enable Firestore</div>'; });
       unsubs.push(unsub);
