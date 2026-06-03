@@ -1292,12 +1292,22 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0`;
       adminUsers.innerHTML = allUsers.map(u =>
         `<div class="admin-user">
           <div><strong>${escHtml(u.displayName || u.email || "?")}</strong><div class="email">${escHtml(u.email || "")} ${u.isAdmin ? '👑 Admin' : ''}</div></div>
-          <div class="actions">${u.isAdmin ? '' : `<button class="btn btn-sm btn-green make-admin-btn" data-uid="${u.id}">Make Admin</button>`}</div>
+          <div class="actions">${
+            u.uid === currentUser?.uid ? '' :
+            u.isAdmin ? `<button class="btn btn-sm btn-red-outline revoke-admin-btn" data-uid="${u.id}">Revoke</button>` :
+            `<button class="btn btn-sm btn-green make-admin-btn" data-uid="${u.id}">Make Admin</button>`
+          }</div>
         </div>`
       ).join("");
       document.querySelectorAll(".make-admin-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
           try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { isAdmin: true }); toastMsg("User promoted"); } catch (e) { toastMsg("Error"); }
+        });
+      });
+      document.querySelectorAll(".revoke-admin-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Revoke admin from this user?")) return;
+          try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { isAdmin: false }); toastMsg("Admin revoked"); } catch (e) { toastMsg("Error"); }
         });
       });
     }
