@@ -125,7 +125,9 @@
     /* --- User Bar --- */
     .user-bar { display: flex; align-items: center; justify-content: space-between; background: var(--card-bg); border-radius: 10px; padding: 12px 16px; border: 1px solid var(--card-border); margin-bottom: 16px; }
     .user-bar .info { display: flex; align-items: center; gap: 10px; }
-    .user-bar .avatar { width: 32px; height: 32px; border-radius: 50%; background: #FFCA28; display: flex; align-items: center; justify-content: center; color: #000; font-weight: 700; font-size: 0.9rem; }
+    .user-bar .avatar { width: 32px; height: 32px; border-radius: 50%; background: #FFCA28; display: flex; align-items: center; justify-content: center; color: #000; font-weight: 700; font-size: 0.9rem; overflow: hidden; flex-shrink: 0; }
+    .user-bar .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .user-bar .avatar .letter { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
     .user-bar .name { font-weight: 600; font-size: 0.9rem; }
     .user-bar .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; background: #FFCA28; color: #000; font-weight: 600; text-transform: uppercase; }
     .user-bar .email { font-size: 0.75rem; color: var(--text-muted); }
@@ -218,7 +220,7 @@
     <div class="nav" id="nav">
       <a data-section="quiz" class="active">Quiz</a>
       <a data-section="leaderboard">Leaderboard</a>
-      <a data-section="customize">Customize</a>
+      <a data-section="customize" id="customizeNav" style="display:none">Customize</a>
       <a data-section="admin" id="adminNav" style="display:none">Admin</a>
       <a data-section="account">Account</a>
     </div>
@@ -369,7 +371,10 @@
     <div class="section" id="section-account">
       <div class="user-bar">
         <div class="info">
-          <div class="avatar" id="avatarLetter">?</div>
+          <div class="avatar" id="avatarLetter">
+            <span class="letter" id="avatarLetterText">?</span>
+            <img id="avatarImg" style="display:none">
+          </div>
           <div>
             <div class="name" id="accountName">—</div>
             <div class="email" id="accountEmail">—</div>
@@ -430,6 +435,7 @@
     };
     const navLinks = document.querySelectorAll(".nav a");
     const adminNav = document.getElementById("adminNav");
+    const customizeNav = document.getElementById("customizeNav");
     const toast = document.getElementById("toast");
 
     const authTitle = document.getElementById("authTitle");
@@ -450,6 +456,8 @@
     const accountEmail = document.getElementById("accountEmail");
     const accountBadge = document.getElementById("accountBadge");
     const avatarLetter = document.getElementById("avatarLetter");
+    const avatarLetterText = document.getElementById("avatarLetterText");
+    const avatarImg = document.getElementById("avatarImg");
     const signOutBtn = document.getElementById("signOutBtn");
     const reqAdminCheck = document.getElementById("reqAdminCheck");
     const reqAdminSection = document.getElementById("reqAdminSection");
@@ -576,7 +584,7 @@
       a.addEventListener("click", () => {
         const section = a.dataset.section;
         if (section === "admin" && (!currentUser || !isAdmin)) return;
-        if (section === "customize" && !currentUser) { toastMsg("Sign in first"); return; }
+        if (section === "customize" && (!currentUser || !isAdmin)) { toastMsg("Admins only"); return; }
         if (section !== "auth") showSection(section);
         if (section === "customize") renderEditor();
       });
@@ -677,6 +685,7 @@
           isAdmin = true;
           renderAccount();
           adminNav.style.display = "";
+          customizeNav.style.display = "";
           toastMsg("You are now an admin!");
           adminReqStatus.textContent = "Admin granted!";
         } catch (e) { adminReqStatus.textContent = "Error: " + e.message; }
@@ -713,6 +722,7 @@
         }
         showSection("quiz");
         adminNav.style.display = isAdmin ? "" : "none";
+        customizeNav.style.display = isAdmin ? "" : "none";
         renderAccount();
         loadAndStartQuiz();
         subscribeLeaderboard();
@@ -721,15 +731,63 @@
         currentUser = null; isAdmin = false; userProfile = null;
         showSection("auth");
         adminNav.style.display = "none";
+        customizeNav.style.display = "none";
         unsubs.forEach(u => u()); unsubs = [];
       }
     });
+
+    function md5(str) {
+      let i, j, k, a, b, c, d, x, s = [], l = str.length;
+      for (i = 0; i < 64; i++) s[i] = Math.abs(Math.sin(i + 1)) * 4294967296 | 0;
+      const w = [7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21];
+      const r = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 0, 7, 14, 5, 12, 3, 10, 1, 8, 15, 6, 13, 4, 11, 2, 9];
+      function hex(n) { let h = ''; for (i = 0; i < 4; i++) { h += '0123456789abcdef'[(n >> (i * 8 + 4)) & 15] + '0123456789abcdef'[(n >> (i * 8)) & 15]; } return h; }
+      function cmn(q, a, b, x, s, t) { return ((a + q + x + t) << s | (a + q + x + t) >>> (32 - s)) + b | 0; }
+      function ff(a, b, c, d, x, s, t) { return cmn((b & c) | (~b & d), a, b, x, s, t); }
+      function gg(a, b, c, d, x, s, t) { return cmn((b & d) | (c & ~d), a, b, x, s, t); }
+      function hh(a, b, c, d, x, s, t) { return cmn(b ^ c ^ d, a, b, x, s, t); }
+      function ii(a, b, c, d, x, s, t) { return cmn(c ^ (b | ~d), a, b, x, s, t); }
+      for (i = 0; i < l * 8; i += 8) s[i >> 5] |= (str.charCodeAt(i / 8) & 255) << (i % 32);
+      s[l >> 5] |= 128 << ((l * 8) % 32); s[((l + 8) >> 6 << 4) + 14] = l * 8;
+      a = 1732584193; b = -271733879; c = -1732584194; d = 271733878;
+      for (i = 0; i < s.length; i += 16) {
+        const oa = a, ob = b, oc = c, od = d;
+        for (j = 0; j < 64; j++) {
+          const f = j < 16 ? ff : j < 32 ? gg : j < 48 ? hh : ii;
+          const g = (j < 16 ? r[j] : j < 32 ? r[j] : j < 48 ? r[j] : r[j]) + i;
+          const t = d; d = c; c = b; b = b + f(a, b, c, d, s[g], w[j], s[j]) | 0; a = t;
+        }
+        a = a + oa | 0; b = b + ob | 0; c = c + oc | 0; d = d + od | 0;
+      }
+      return hex(a) + hex(b) + hex(c) + hex(d);
+    }
+
+    function setAvatar(email, name) {
+      const letter = (name || email || "?")[0].toUpperCase();
+      avatarLetterText.textContent = letter;
+      if (email) {
+        const hash = md5(email.trim().toLowerCase());
+        avatarImg.src = `https://www.gravatar.com/avatar/${hash}?s=64&d=identicon&r=g`;
+        avatarImg.style.display = "";
+        avatarLetterText.style.display = "none";
+        avatarLetter.style.background = "transparent";
+        avatarImg.onerror = () => {
+          avatarImg.style.display = "none";
+          avatarLetterText.style.display = "";
+          avatarLetter.style.background = "#FFCA28";
+        };
+      } else {
+        avatarImg.style.display = "none";
+        avatarLetterText.style.display = "";
+        avatarLetter.style.background = "#FFCA28";
+      }
+    }
 
     function renderAccount() {
       const name = userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split("@")[0] || "User";
       accountName.textContent = name;
       accountEmail.textContent = currentUser?.email || "—";
-      avatarLetter.textContent = name.charAt(0).toUpperCase();
+      setAvatar(currentUser?.email, name);
       accountBadge.innerHTML = isAdmin ? '<span class="badge">Admin</span>' : '<span style="font-size:0.75rem;color:#666">User</span>';
       reqAdminCheck.checked = false;
       reqAdminSection.style.display = "none";
