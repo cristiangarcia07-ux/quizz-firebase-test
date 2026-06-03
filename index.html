@@ -275,6 +275,14 @@
           </div>
         </div>
         <div id="authLoader" class="loading" style="display:none">Loading...</div>
+        <div id="appealArea" style="display:none">
+          <hr>
+          <h2 style="text-align:center;font-size:1.2rem;margin-bottom:8px;color:#FFCA28">📩 Appeal Ban</h2>
+          <p style="font-size:0.85rem;color:var(--text-dim);text-align:center;margin-bottom:12px">Write a message explaining why you should be unbanned.</p>
+          <textarea id="appealMessage" rows="4" style="font-size:0.85rem" placeholder="Explain your case..."></textarea>
+          <div id="appealStatus" style="font-size:0.85rem;color:var(--text-dim);text-align:center;margin-top:8px"></div>
+          <button class="btn btn-yellow" id="submitAppealBtn" style="width:100%;margin-top:8px">Submit Appeal</button>
+        </div>
       </div>
     </div>
 
@@ -370,6 +378,10 @@
         <h3>📊 Quiz Stats</h3>
         <div id="adminStats"><div class="lb-empty">Loading stats...</div></div>
       </div>
+      <div class="admin-card">
+        <h3>📩 Ban Appeals</h3>
+        <div id="adminAppeals"><div class="lb-empty">Loading appeals...</div></div>
+      </div>
       <button class="btn btn-red-outline btn-sm" id="adminSignOut" style="margin-top:8px">Sign Out</button>
     </div>
 
@@ -425,6 +437,7 @@
     const SCORES_COLLECTION = "quiz_scores";
     const REQUESTS_COLLECTION = "admin_requests";
     const QUESTIONS_COLLECTION = "quiz_questions";
+    const APPEALS_COLLECTION = "ban_appeals";
 
     if (!getApps().length) initializeApp(firebaseConfig);
     const auth = getAuth();
@@ -457,6 +470,9 @@
     const adminCheck = document.getElementById("adminCheck");
     const adminSecretField = document.getElementById("adminSecretField");
     const adminSecret = document.getElementById("adminSecret");
+    const appealMessage = document.getElementById("appealMessage");
+    const submitAppealBtn = document.getElementById("submitAppealBtn");
+    const appealStatus = document.getElementById("appealStatus");
 
     const accountName = document.getElementById("accountName");
     const accountEmail = document.getElementById("accountEmail");
@@ -488,6 +504,7 @@
     const adminUsers = document.getElementById("adminUsers");
     const adminRequests = document.getElementById("adminRequests");
     const adminStats = document.getElementById("adminStats");
+    const adminAppeals = document.getElementById("adminAppeals");
     const adminSignOut = document.getElementById("adminSignOut");
 
     const useDefaultTab = document.getElementById("useDefaultTab");
@@ -718,13 +735,24 @@
             userProfile = snap.data();
             isAdmin = userProfile.isAdmin || false;
             if (userProfile.banned) {
-              currentUser = null; isAdmin = false; userProfile = null;
+              currentUser = user; isAdmin = false; userProfile = userProfile;
               showSection("auth");
               document.getElementById("authFields").style.display = "none";
-              document.getElementById("authLoader").style.display = "";
-              document.getElementById("authLoader").textContent = "🚫 Your account has been permanently banned.";
+              document.getElementById("authLoader").style.display = "none";
+              document.getElementById("appealArea").style.display = "block";
+              document.getElementById("authTitle").textContent = "🚫 Account Banned";
+              document.getElementById("appealStatus").textContent = "";
+              appealMessage.value = "";
               adminNav.style.display = "none";
               customizeNav.style.display = "none";
+              // Check for existing appeal
+              const existingSnap = await getDocs(query(collection(db, APPEALS_COLLECTION), where("uid", "==", user.uid), where("status", "==", "pending")));
+              if (!existingSnap.empty) {
+                document.getElementById("appealStatus").textContent = "You already have a pending appeal. Wait for a response.";
+                submitAppealBtn.disabled = true;
+              } else {
+                submitAppealBtn.disabled = false;
+              }
               return;
             }
             if (userProfile.suspendedUntil) {
@@ -762,6 +790,8 @@
         }
         document.getElementById("authFields").style.display = "";
         document.getElementById("authLoader").style.display = "none";
+        document.getElementById("appealArea").style.display = "none";
+        submitAppealBtn.disabled = false;
         showSection("quiz");
         adminNav.style.display = isAdmin ? "" : "none";
         customizeNav.style.display = isAdmin ? "" : "none";
@@ -1301,6 +1331,25 @@
       themeToggle.textContent = next === "light" ? "☀️" : "🌙";
     });
 
+    // === BAN APPEAL ===
+    submitAppealBtn.addEventListener("click", async () => {
+      const msg = appealMessage.value.trim();
+      if (!msg) { appealStatus.textContent = "Write a message first."; return; }
+      if (!currentUser) return;
+      appealStatus.textContent = "Submitting...";
+      try {
+        const existingSnap = await getDocs(query(collection(db, APPEALS_COLLECTION), where("uid", "==", currentUser.uid), where("status", "==", "pending")));
+        if (!existingSnap.empty) { appealStatus.textContent = "You already have a pending appeal."; return; }
+        await addDoc(collection(db, APPEALS_COLLECTION), {
+          uid: currentUser.uid, email: currentUser.email,
+          name: currentUser.displayName || currentUser.email?.split("@")[0] || "User",
+          message: msg, status: "pending", createdAt: Timestamp.now()
+        });
+        appealStatus.textContent = "✅ Appeal submitted. An admin will review it.";
+        submitAppealBtn.disabled = true;
+      } catch (e) { appealStatus.textContent = "Error: " + e.message; }
+    });
+
     // === CSV TEMPLATE ===
     downloadTemplateBtn.addEventListener("click", () => {
       const csv = `# question,option1,option2,option3,option4,correctIndex
@@ -1328,7 +1377,45 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0`;
       const u3 = onSnapshot(collection(db, SCORES_COLLECTION), snap => {
         allScores = []; snap.forEach(d => allScores.push({ id: d.id, ...d.data() })); renderAdminStats();
       });
-      unsubs.push(u1, u2, u3);
+      const u4 = onSnapshot(query(collection(db, APPEALS_COLLECTION), where("status", "==", "pending")), snap => {
+        const list = []; snap.forEach(d => list.push({ id: d.id, ...d.data() })); renderAdminAppeals(list);
+      });
+      unsubs.push(u1, u2, u3, u4);
+    }
+
+    function renderAdminAppeals(list) {
+      if (!list.length) { adminAppeals.innerHTML = '<div class="lb-empty">No pending appeals</div>'; return; }
+      adminAppeals.innerHTML = list.map(a =>
+        `<div class="admin-req">
+          <div>
+            <strong>${escHtml(a.name || a.email || "?")}</strong>
+            <div class="email" style="white-space:pre-wrap;margin-top:4px;font-size:0.8rem">${escHtml(a.message)}</div>
+            <div class="email" style="font-size:0.7rem">${a.email || ""}</div>
+          </div>
+          <div class="actions" style="align-self:flex-start;margin-top:4px">
+            <button class="btn btn-sm btn-green appeal-approve-btn" data-id="${a.id}" data-uid="${a.uid}">Approve</button>
+            <button class="btn btn-sm btn-red appeal-deny-btn" data-id="${a.id}" data-uid="${a.uid}">Deny</button>
+          </div>
+        </div>`
+      ).join("");
+      document.querySelectorAll(".appeal-approve-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          try {
+            await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { banned: false });
+            await updateDoc(doc(db, APPEALS_COLLECTION, btn.dataset.id), { status: "approved", reviewedAt: Timestamp.now() });
+            toastMsg("Appeal approved — user unbanned");
+          } catch (e) { toastMsg("Error: " + e.message); }
+        });
+      });
+      document.querySelectorAll(".appeal-deny-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Deny this appeal?")) return;
+          try {
+            await updateDoc(doc(db, APPEALS_COLLECTION, btn.dataset.id), { status: "denied", reviewedAt: Timestamp.now() });
+            toastMsg("Appeal denied");
+          } catch (e) { toastMsg("Error: " + e.message); }
+        });
+      });
     }
 
     function renderAdminUsers() {
