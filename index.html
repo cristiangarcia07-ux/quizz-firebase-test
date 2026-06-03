@@ -745,13 +745,26 @@
               appealMessage.value = "";
               adminNav.style.display = "none";
               customizeNav.style.display = "none";
-              // Check for existing appeal
-              const existingSnap = await getDocs(query(collection(db, APPEALS_COLLECTION), where("uid", "==", user.uid), where("status", "==", "pending")));
-              if (!existingSnap.empty) {
+              // Check for existing pending appeal
+              const pendingSnap = await getDocs(query(collection(db, APPEALS_COLLECTION), where("uid", "==", user.uid), where("status", "==", "pending")));
+              if (!pendingSnap.empty) {
                 document.getElementById("appealStatus").textContent = "You already have a pending appeal. Wait for a response.";
                 submitAppealBtn.disabled = true;
               } else {
-                submitAppealBtn.disabled = false;
+                // Check for denied appeals
+                const deniedSnap = await getDocs(query(collection(db, APPEALS_COLLECTION), where("uid", "==", user.uid), where("status", "==", "denied")));
+                if (!deniedSnap.empty) {
+                  const lastDenied = deniedSnap.docs[deniedSnap.docs.length - 1].data();
+                  const responseMsg = lastDenied.response ? ` Response: "${lastDenied.response}"` : "";
+                  document.getElementById("appealStatus").textContent = `❌ Your appeal was denied.${responseMsg}`;
+                  document.getElementById("appealStatus").style.color = "#f44336";
+                  submitAppealBtn.disabled = false;
+                  submitAppealBtn.textContent = "Submit New Appeal";
+                } else {
+                  document.getElementById("appealStatus").style.color = "var(--text-dim)";
+                  submitAppealBtn.disabled = false;
+                  submitAppealBtn.textContent = "Submit Appeal";
+                }
               }
               return;
             }
@@ -1409,9 +1422,10 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0`;
       });
       document.querySelectorAll(".appeal-deny-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
-          if (!confirm("Deny this appeal?")) return;
+          const response = prompt("Reason for denial (optional):");
+          if (response === null) return;
           try {
-            await updateDoc(doc(db, APPEALS_COLLECTION, btn.dataset.id), { status: "denied", reviewedAt: Timestamp.now() });
+            await updateDoc(doc(db, APPEALS_COLLECTION, btn.dataset.id), { status: "denied", response: response || "", reviewedAt: Timestamp.now() });
             toastMsg("Appeal denied");
           } catch (e) { toastMsg("Error: " + e.message); }
         });
