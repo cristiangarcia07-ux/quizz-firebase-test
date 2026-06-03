@@ -711,6 +711,26 @@
           if (snap.exists()) {
             userProfile = snap.data();
             isAdmin = userProfile.isAdmin || false;
+            if (userProfile.banned) {
+              currentUser = null; isAdmin = false; userProfile = null;
+              showSection("auth");
+              document.getElementById("authFields").style.display = "none";
+              document.getElementById("authLoader").style.display = "";
+              document.getElementById("authLoader").textContent = "🚫 Your account has been banned.";
+              adminNav.style.display = "none";
+              customizeNav.style.display = "none";
+              return;
+            }
+            if (userProfile.suspended) {
+              currentUser = null; isAdmin = false; userProfile = null;
+              showSection("auth");
+              document.getElementById("authFields").style.display = "none";
+              document.getElementById("authLoader").style.display = "";
+              document.getElementById("authLoader").textContent = "⏸️ Your account is suspended.";
+              adminNav.style.display = "none";
+              customizeNav.style.display = "none";
+              return;
+            }
           } else {
             userProfile = { uid: user.uid, email: user.email, displayName: user.displayName || "User", isAdmin: false };
             isAdmin = false;
@@ -720,6 +740,8 @@
           userProfile = { uid: user.uid, email: user.email, displayName: user.displayName || "User", isAdmin: false };
           isAdmin = false;
         }
+        document.getElementById("authFields").style.display = "";
+        document.getElementById("authLoader").style.display = "none";
         showSection("quiz");
         adminNav.style.display = isAdmin ? "" : "none";
         customizeNav.style.display = isAdmin ? "" : "none";
@@ -729,6 +751,8 @@
         if (isAdmin) subscribeAdminData();
       } else {
         currentUser = null; isAdmin = false; userProfile = null;
+        document.getElementById("authFields").style.display = "";
+        document.getElementById("authLoader").style.display = "none";
         showSection("auth");
         adminNav.style.display = "none";
         customizeNav.style.display = "none";
@@ -1291,12 +1315,23 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0`;
       if (!allUsers.length) { adminUsers.innerHTML = '<div class="lb-empty">No users yet</div>'; return; }
       adminUsers.innerHTML = allUsers.map(u =>
         `<div class="admin-user">
-          <div><strong>${escHtml(u.displayName || u.email || "?")}</strong><div class="email">${escHtml(u.email || "")} ${u.isAdmin ? '👑 Admin' : ''}</div></div>
-          <div class="actions">${
-            u.uid === currentUser?.uid ? '' :
-            u.isAdmin ? `<button class="btn btn-sm btn-red-outline revoke-admin-btn" data-uid="${u.id}">Revoke</button>` :
-            `<button class="btn btn-sm btn-green make-admin-btn" data-uid="${u.id}">Make Admin</button>`
-          }</div>
+          <div>
+            <strong>${escHtml(u.displayName || u.email || "?")}</strong>
+            <div class="email">
+              ${escHtml(u.email || "")}
+              ${u.isAdmin ? '👑 Admin' : ''}
+              ${u.banned ? '🚫 Banned' : ''}
+              ${u.suspended ? '⏸️ Suspended' : ''}
+            </div>
+          </div>
+          <div class="actions">
+            ${u.uid === currentUser?.uid ? '' : `
+              ${u.isAdmin ? `<button class="btn btn-sm btn-red-outline revoke-admin-btn" data-uid="${u.id}">Revoke</button>` : `<button class="btn btn-sm btn-green make-admin-btn" data-uid="${u.id}">Make Admin</button>`}
+              ${u.banned ? `<button class="btn btn-sm btn-green unban-btn" data-uid="${u.id}">Unban</button>` : `<button class="btn btn-sm btn-red-outline ban-btn" data-uid="${u.id}">Ban</button>`}
+              ${u.suspended ? `<button class="btn btn-sm btn-green unsuspend-btn" data-uid="${u.id}">Unsuspend</button>` : `<button class="btn btn-outline btn-sm suspend-btn" data-uid="${u.id}">Suspend</button>`}
+              <button class="btn btn-red btn-sm delete-user-btn" data-uid="${u.id}">Delete</button>
+            `}
+          </div>
         </div>`
       ).join("");
       document.querySelectorAll(".make-admin-btn").forEach(btn => {
@@ -1308,6 +1343,39 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0`;
         btn.addEventListener("click", async () => {
           if (!confirm("Revoke admin from this user?")) return;
           try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { isAdmin: false }); toastMsg("Admin revoked"); } catch (e) { toastMsg("Error"); }
+        });
+      });
+      document.querySelectorAll(".ban-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Ban this user?")) return;
+          try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { banned: true, suspended: false }); toastMsg("User banned"); } catch (e) { toastMsg("Error"); }
+        });
+      });
+      document.querySelectorAll(".unban-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { banned: false }); toastMsg("User unbanned"); } catch (e) { toastMsg("Error"); }
+        });
+      });
+      document.querySelectorAll(".suspend-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Suspend this user?")) return;
+          try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { suspended: true, banned: false }); toastMsg("User suspended"); } catch (e) { toastMsg("Error"); }
+        });
+      });
+      document.querySelectorAll(".unsuspend-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { suspended: false }); toastMsg("User unsuspended"); } catch (e) { toastMsg("Error"); }
+        });
+      });
+      document.querySelectorAll(".delete-user-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Permanently delete this user's profile and all their scores? This cannot be undone.")) return;
+          try {
+            const scoreSnap = await getDocs(query(collection(db, SCORES_COLLECTION), where("uid", "==", btn.dataset.uid)));
+            for (const d of scoreSnap.docs) await deleteDoc(doc(db, SCORES_COLLECTION, d.id));
+            await deleteDoc(doc(db, USERS_COLLECTION, btn.dataset.uid));
+            toastMsg("User deleted");
+          } catch (e) { toastMsg("Error: " + e.message); }
         });
       });
     }
