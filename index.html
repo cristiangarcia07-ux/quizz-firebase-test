@@ -206,6 +206,12 @@
     .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--surface-alt); color: var(--text); padding: 12px 24px; border-radius: 10px; border: 1px solid var(--border); font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; text-align: center; z-index: 999; }
     .toast.show { opacity: 1; }
     .loading { text-align: center; padding: 40px; color: var(--text-muted); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 998; display: flex; align-items: center; justify-content: center; }
+    .modal-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 24px; max-width: 360px; width: 90%; }
+    .modal-box h3 { color: #FFCA28; font-size: 1rem; margin-bottom: 12px; }
+    .modal-box label { font-size: 0.8rem; color: var(--text-dim); display: block; margin-bottom: 4px; }
+    .modal-box input { margin-bottom: 12px; }
+    .modal-box .flex { justify-content: flex-end; }
     .flex { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .mt-8 { margin-top: 8px; }
     .w-full { width: 100%; }
@@ -716,20 +722,34 @@
               showSection("auth");
               document.getElementById("authFields").style.display = "none";
               document.getElementById("authLoader").style.display = "";
-              document.getElementById("authLoader").textContent = "🚫 Your account has been banned.";
+              document.getElementById("authLoader").textContent = "🚫 Your account has been permanently banned.";
               adminNav.style.display = "none";
               customizeNav.style.display = "none";
               return;
             }
-            if (userProfile.suspended) {
-              currentUser = null; isAdmin = false; userProfile = null;
-              showSection("auth");
-              document.getElementById("authFields").style.display = "none";
-              document.getElementById("authLoader").style.display = "";
-              document.getElementById("authLoader").textContent = "⏸️ Your account is suspended.";
-              adminNav.style.display = "none";
-              customizeNav.style.display = "none";
-              return;
+            if (userProfile.suspendedUntil) {
+              const until = userProfile.suspendedUntil.toDate ? userProfile.suspendedUntil.toDate() : new Date(userProfile.suspendedUntil);
+              const now = new Date();
+              if (until > now) {
+                const diff = until - now;
+                const days = Math.floor(diff / 86400000);
+                const hours = Math.floor((diff % 86400000) / 3600000);
+                const mins = Math.floor((diff % 3600000) / 60000);
+                let remaining = "";
+                if (days > 0) remaining = `${days}d ${hours}h ${mins}m`;
+                else if (hours > 0) remaining = `${hours}h ${mins}m`;
+                else remaining = `${mins}m`;
+                currentUser = null; isAdmin = false; userProfile = null;
+                showSection("auth");
+                document.getElementById("authFields").style.display = "none";
+                document.getElementById("authLoader").style.display = "";
+                document.getElementById("authLoader").textContent = `⏸️ Your account is suspended until ${until.toLocaleString()} (${remaining} remaining).`;
+                adminNav.style.display = "none";
+                customizeNav.style.display = "none";
+                return;
+              } else {
+                await updateDoc(doc(db, USERS_COLLECTION, user.uid), { suspendedUntil: null });
+              }
             }
           } else {
             userProfile = { uid: user.uid, email: user.email, displayName: user.displayName || "User", isAdmin: false };
@@ -1313,27 +1333,36 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0`;
 
     function renderAdminUsers() {
       if (!allUsers.length) { adminUsers.innerHTML = '<div class="lb-empty">No users yet</div>'; return; }
-      adminUsers.innerHTML = allUsers.map(u =>
-        `<div class="admin-user">
+      adminUsers.innerHTML = allUsers.map(u => {
+        let statusLabel = escHtml(u.email || "");
+        if (u.isAdmin) statusLabel += ' 👑 Admin';
+        if (u.banned) statusLabel += ' 🚫 Banned';
+        if (u.suspendedUntil) {
+          const until = u.suspendedUntil.toDate ? u.suspendedUntil.toDate() : new Date(u.suspendedUntil);
+          const diff = until - new Date();
+          if (diff > 0) {
+            const d = Math.floor(diff / 86400000);
+            const h = Math.floor((diff % 86400000) / 3600000);
+            statusLabel += ` ⏸️ ${d > 0 ? d + 'd ' : ''}${h}h left`;
+          } else {
+            statusLabel += ' ⏸️ Expired';
+          }
+        }
+        return `<div class="admin-user">
           <div>
             <strong>${escHtml(u.displayName || u.email || "?")}</strong>
-            <div class="email">
-              ${escHtml(u.email || "")}
-              ${u.isAdmin ? '👑 Admin' : ''}
-              ${u.banned ? '🚫 Banned' : ''}
-              ${u.suspended ? '⏸️ Suspended' : ''}
-            </div>
+            <div class="email">${statusLabel}</div>
           </div>
           <div class="actions">
             ${u.uid === currentUser?.uid ? '' : `
               ${u.isAdmin ? `<button class="btn btn-sm btn-red-outline revoke-admin-btn" data-uid="${u.id}">Revoke</button>` : `<button class="btn btn-sm btn-green make-admin-btn" data-uid="${u.id}">Make Admin</button>`}
               ${u.banned ? `<button class="btn btn-sm btn-green unban-btn" data-uid="${u.id}">Unban</button>` : `<button class="btn btn-sm btn-red-outline ban-btn" data-uid="${u.id}">Ban</button>`}
-              ${u.suspended ? `<button class="btn btn-sm btn-green unsuspend-btn" data-uid="${u.id}">Unsuspend</button>` : `<button class="btn btn-outline btn-sm suspend-btn" data-uid="${u.id}">Suspend</button>`}
+              ${u.suspendedUntil ? `<button class="btn btn-sm btn-green unsuspend-btn" data-uid="${u.id}">Unsuspend</button>` : `<button class="btn btn-outline btn-sm suspend-btn" data-uid="${u.id}">Suspend</button>`}
               <button class="btn btn-red btn-sm delete-user-btn" data-uid="${u.id}">Delete</button>
             `}
           </div>
-        </div>`
-      ).join("");
+        </div>`;
+      }).join("");
       document.querySelectorAll(".make-admin-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
           try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { isAdmin: true }); toastMsg("User promoted"); } catch (e) { toastMsg("Error"); }
@@ -1348,7 +1377,7 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0`;
       document.querySelectorAll(".ban-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
           if (!confirm("Ban this user?")) return;
-          try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { banned: true, suspended: false }); toastMsg("User banned"); } catch (e) { toastMsg("Error"); }
+          try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { banned: true, suspendedUntil: null }); toastMsg("User banned"); } catch (e) { toastMsg("Error"); }
         });
       });
       document.querySelectorAll(".unban-btn").forEach(btn => {
@@ -1357,14 +1386,41 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0`;
         });
       });
       document.querySelectorAll(".suspend-btn").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          if (!confirm("Suspend this user?")) return;
-          try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { suspended: true, banned: false }); toastMsg("User suspended"); } catch (e) { toastMsg("Error"); }
+        btn.addEventListener("click", () => {
+          const uid = btn.dataset.uid;
+          const overlay = document.createElement("div");
+          overlay.className = "modal-overlay";
+          overlay.id = "suspendModal";
+          const now = new Date();
+          now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+          const defaultVal = new Date(Date.now() + 86400000).toISOString().slice(0, 16);
+          overlay.innerHTML = `
+            <div class="modal-box">
+              <h3>⏸️ Suspend User</h3>
+              <label>Suspension ends at (date & time)</label>
+              <input type="datetime-local" id="suspendUntilInput" value="${defaultVal}" min="${now.toISOString().slice(0, 16)}">
+              <div class="flex">
+                <button class="btn btn-outline btn-sm" id="suspendCancelBtn">Cancel</button>
+                <button class="btn btn-yellow btn-sm" id="suspendConfirmBtn">Suspend</button>
+              </div>
+            </div>`;
+          document.body.appendChild(overlay);
+          document.getElementById("suspendCancelBtn").addEventListener("click", () => overlay.remove());
+          document.getElementById("suspendConfirmBtn").addEventListener("click", async () => {
+            const val = document.getElementById("suspendUntilInput").value;
+            if (!val) { toastMsg("Pick a date & time"); return; }
+            try {
+              await updateDoc(doc(db, USERS_COLLECTION, uid), { suspendedUntil: Timestamp.fromDate(new Date(val)), banned: false });
+              toastMsg("User suspended");
+              overlay.remove();
+            } catch (e) { toastMsg("Error: " + e.message); }
+          });
         });
       });
       document.querySelectorAll(".unsuspend-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
-          try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { suspended: false }); toastMsg("User unsuspended"); } catch (e) { toastMsg("Error"); }
+          if (!confirm("Unsuspend this user?")) return;
+          try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { suspendedUntil: null }); toastMsg("User unsuspended"); } catch (e) { toastMsg("Error"); }
         });
       });
       document.querySelectorAll(".delete-user-btn").forEach(btn => {
