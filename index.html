@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔥 QUIZ</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --text: #eee;
+      --text-muted: #666;
+      --text-dim: #888;
+      --text-faint: #444;
+      --card-bg: #151515;
+      --card-border: #222;
+      --surface-bg: #1a1a1a;
+      --border: #333;
+      --surface-alt: #1e1e1e;
+      --border-dim: #2a2a2a;
+      --surface-hover: #252525;
+      --text-faint2: #555;
+      --text-dim2: #aaa;
+    }
+    [data-theme="light"] {
+      --bg: #f5f5f5;
+      --text: #1a1a1a;
+      --text-muted: #777;
+      --text-dim: #888;
+      --text-faint: #aaa;
+      --card-bg: #ffffff;
+      --card-border: #ddd;
+      --surface-bg: #eeeeee;
+      --border: #ccc;
+      --surface-alt: #f0f0f0;
+      --border-dim: #bbb;
+      --surface-hover: #e0e0e0;
+      --text-faint2: #999;
+      --text-dim2: #666;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    h1 { margin: 24px 0 4px; font-size: 2rem; letter-spacing: 4px; color: #FFCA28; text-transform: uppercase; }
+    .sub { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px; }
+    .container { width: 100%; max-width: 620px; padding: 0 20px; }
+
+    .theme-toggle { position: fixed; top: 16px; right: 16px; z-index: 100; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .theme-toggle:hover { border-color: #FFCA28; }
+
+    .btn { padding: 10px 24px; border-radius: 8px; border: none; font-size: 0.9rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.15s; }
+    .btn-yellow { background: #FFCA28; color: #000; }
+    .btn-yellow:hover { background: #ffd54f; }
+    .btn-yellow:disabled { opacity: 0.4; cursor: default; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: #FFCA28; color: #FFCA28; }
+    .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
+    .btn-red { background: #f44336; color: #fff; }
+    .btn-red:hover { background: #e53935; }
+    .btn-red-outline { background: transparent; border: 1px solid #f44336; color: #f44336; }
+    .btn-red-outline:hover { background: #f44336; color: #fff; }
+    .btn-green { background: #4caf50; color: #fff; }
+    .btn-green:hover { background: #43a047; }
+    .btn-google { background: #fff; color: #333; border: 1px solid #ddd; }
+    .btn-google:hover { background: #f5f5f5; }
+    .btn-icon { padding: 6px 10px; font-size: 0.85rem; }
+    input, select, textarea { padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-bg); color: var(--text); font-size: 0.95rem; outline: none; width: 100%; font-family: inherit; }
+    input:focus, select:focus, textarea:focus { border-color: #FFCA28; }
+    textarea { resize: vertical; min-height: 50px; }
+    label { font-size: 0.8rem; color: var(--text-dim); display: block; margin-bottom: 3px; }
+    hr { border: none; border-top: 1px solid var(--card-border); margin: 16px 0; }
+
+    .nav { display: flex; gap: 6px; margin: 16px 0; flex-wrap: wrap; justify-content: center; }
+    .nav a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; padding: 6px 14px; border-radius: 6px; cursor: pointer; transition: 0.15s; }
+    .nav a:hover, .nav a.active { color: #FFCA28; background: var(--surface-bg); }
+
+    .section { display: none; width: 100%; }
+    .section.active { display: block; }
+
+    /* --- Frog --- */
+    .frog-area { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 10px; }
+    .frog { position: relative; width: 70px; height: 60px; transition: transform 0.3s; flex-shrink: 0; }
+    .frog.jump { animation: frogJump 0.4s ease; }
+    .frog.sad { animation: frogCry 0.5s ease; }
+    .frog.wiggle { animation: frogWiggle 0.3s ease; }
+    @keyframes frogJump { 0%{transform:translateY(0)} 40%{transform:translateY(-30px)} 60%{transform:translateY(-30px)} 100%{transform:translateY(0)} }
+    @keyframes frogCry { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-8deg)} 75%{transform:rotate(8deg)} }
+    @keyframes frogWiggle { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-5deg)} 75%{transform:rotate(5deg)} }
+
+    .frog-body { width: 50px; height: 38px; background: #4CAF50; border-radius: 50% 50% 40% 40%; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); box-shadow: inset 0 -6px 0 rgba(0,0,0,0.15); }
+    .frog-eye { position: absolute; width: 16px; height: 16px; background: #4CAF50; border-radius: 50%; top: -6px; }
+    .frog-eye::after { content: ''; position: absolute; width: 8px; height: 8px; background: #1a1a1a; border-radius: 50%; top: 4px; left: 4px; transition: 0.2s; }
+    .frog-eye.left { left: 10px; }
+    .frog-eye.right { right: 10px; }
+    .frog.happy .frog-eye::after { width: 10px; height: 10px; top: 3px; left: 3px; }
+    .frog.happy .frog-mouth { width: 16px; height: 6px; border-bottom: 3px solid #1a1a1a; border-radius: 0 0 10px 10px; }
+    .frog.sad .frog-eye::after { width: 6px; height: 6px; top: 5px; left: 5px; }
+    .frog.sad .frog-mouth { width: 12px; height: 5px; border-top: 3px solid #1a1a1a; border-radius: 10px 10px 0 0; }
+    .frog-mouth { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); width: 14px; height: 4px; border-bottom: 2px solid #1a1a1a; border-radius: 0 0 8px 8px; transition: 0.2s; }
+    .frog-cheek { position: absolute; width: 8px; height: 5px; background: rgba(255,100,100,0.25); border-radius: 50%; bottom: 4px; }
+    .frog-cheek.left { left: 2px; }
+    .frog-cheek.right { right: 2px; }
+    .frog-blush { display: none; }
+    .frog.happy .frog-blush { display: block; }
+    .frog-speech { background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; font-size: 0.85rem; color: var(--text-dim2); max-width: 280px; position: relative; }
+    .frog-speech::before { content: ''; position: absolute; left: -6px; top: 50%; transform: translateY(-50%); border: 6px solid transparent; border-right-color: var(--border); }
+    .frog-speech span { color: #FFCA28; }
+
+    /* --- Auth --- */
+    .auth-card { background: var(--card-bg); border-radius: 14px; padding: 32px 24px; border: 1px solid var(--card-border); margin-top: 20px; }
+    .auth-card h2 { text-align: center; margin-bottom: 20px; color: #FFCA28; }
+    .auth-field { margin-bottom: 14px; }
+    .auth-row { display: flex; gap: 10px; }
+    .auth-row .btn { flex: 1; }
+    .auth-toggle { text-align: center; margin-top: 16px; font-size: 0.85rem; color: var(--text-dim); }
+    .auth-toggle a { color: #FFCA28; cursor: pointer; }
+    .auth-error { color: #f44336; font-size: 0.85rem; text-align: center; margin-top: 8px; }
+    .auth-divider { text-align: center; margin: 16px 0; color: var(--text-faint); font-size: 0.85rem; position: relative; }
+    .auth-divider::before, .auth-divider::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--card-border); }
+    .auth-divider::before { left: 0; }
+    .auth-divider::after { right: 0; }
+    .admin-check { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 0.85rem; }
+    .admin-check input[type="checkbox"] { width: auto; accent-color: #FFCA28; }
+
+    /* --- User Bar --- */
+    .user-bar { display: flex; align-items: center; justify-content: space-between; background: var(--card-bg); border-radius: 10px; padding: 12px 16px; border: 1px solid var(--card-border); margin-bottom: 16px; }
+    .user-bar .info { display: flex; align-items: center; gap: 10px; }
+    .user-bar .avatar { width: 32px; height: 32px; border-radius: 50%; background: #FFCA28; display: flex; align-items: center; justify-content: center; color: #000; font-weight: 700; font-size: 0.9rem; }
+    .user-bar .name { font-weight: 600; font-size: 0.9rem; }
+    .user-bar .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; background: #FFCA28; color: #000; font-weight: 600; text-transform: uppercase; }
+    .user-bar .email { font-size: 0.75rem; color: var(--text-muted); }
+
+    /* --- Quiz --- */
+    .question-card { background: var(--card-bg); border-radius: 14px; padding: 24px; border: 1px solid var(--card-border); margin-bottom: 16px; }
+    .q-number { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .q-text { font-size: 1.2rem; line-height: 1.5; margin-bottom: 20px; }
+    .options { display: flex; flex-direction: column; gap: 10px; }
+    .option { padding: 14px 18px; border-radius: 10px; border: 1px solid var(--border-dim); background: var(--surface-alt); cursor: pointer; font-size: 1rem; text-align: left; color: var(--text); transition: 0.15s; }
+    .option:hover { border-color: #555; background: var(--surface-hover); }
+    .option.correct { border-color: #4caf50 !important; background: #0d2810 !important; color: #4caf50 !important; }
+    .option.wrong { border-color: #f44336 !important; background: #280d0d !important; color: #f44336 !important; }
+    .option:disabled { cursor: default; opacity: 0.6; }
+
+    .stats { display: flex; gap: 24px; margin-bottom: 16px; justify-content: center; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat .lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .stat .val { font-size: 1.4rem; font-weight: 700; color: #FFCA28; }
+    .quit-bar { display: flex; justify-content: center; margin-bottom: 12px; }
+
+    .results-card { background: var(--card-bg); border-radius: 14px; padding: 32px 24px; border: 1px solid var(--card-border); text-align: center; margin-bottom: 16px; }
+    .results-card .big { font-size: 3rem; font-weight: 700; color: #FFCA28; }
+    .results-card .sub { font-size: 1rem; color: var(--text-dim); margin-top: 4px; }
+
+    /* --- Quiz Editor --- */
+    .editor-card { background: var(--card-bg); border-radius: 10px; padding: 16px; border: 1px solid var(--card-border); margin-bottom: 12px; }
+    .editor-card h3 { font-size: 0.9rem; color: #FFCA28; margin-bottom: 12px; }
+    .q-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--surface-bg); gap: 10px; }
+    .q-item:last-child { border: none; }
+    .q-item .q-preview { flex: 1; font-size: 0.85rem; min-width: 0; }
+    .q-item .q-preview .q-preview-text { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .q-item .q-preview .q-preview-opts { color: var(--text-muted); font-size: 0.75rem; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .q-item .q-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .inline-form { display: flex; flex-direction: column; gap: 8px; }
+    .opt-row { display: flex; gap: 4px; align-items: center; }
+    .opt-row input { flex: 1; }
+    .opt-row .opt-correct { width: auto; accent-color: #4caf50; margin: 0; }
+    .opt-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; }
+    .editor-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+    .editor-tabs button { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-size: 0.8rem; cursor: pointer; }
+    .editor-tabs button.active { border-color: #FFCA28; color: #FFCA28; background: var(--surface-bg); }
+    .editor-tabs button:hover { border-color: #FFCA28; }
+    .editor-toolbar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+    .editor-toolbar .spacer { flex: 1; }
+    .search-input { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-bg); color: var(--text); font-size: 0.8rem; outline: none; width: 180px; }
+    .search-input:focus { border-color: #FFCA28; }
+    .csv-area { margin-top: 12px; }
+    .csv-area summary { cursor: pointer; color: var(--text-dim); font-size: 0.8rem; padding: 4px 0; }
+    .csv-area summary:hover { color: #FFCA28; }
+    .csv-inner { margin-top: 8px; padding: 12px; background: var(--surface-bg); border-radius: 8px; border: 1px solid var(--border); }
+
+    /* --- Leaderboard --- */
+    .lb-section { margin: 20px 0 40px; }
+    .lb-section h2 { color: var(--text-dim); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+    .lb-entry { display: flex; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--surface-bg); font-size: 0.9rem; }
+    .lb-entry .rank { color: var(--text-muted); width: 30px; }
+    .lb-entry .name { flex: 1; }
+    .lb-entry .score { color: #FFCA28; font-weight: 600; }
+    .lb-entry:nth-child(1) .name { color: #FFD700; }
+    .lb-entry:nth-child(2) .name { color: #C0C0C0; }
+    .lb-entry:nth-child(3) .name { color: #CD7F32; }
+    .lb-empty { color: var(--text-faint); text-align: center; padding: 20px; font-size: 0.85rem; }
+
+    /* --- Admin --- */
+    .admin-card { background: var(--card-bg); border-radius: 10px; padding: 16px; border: 1px solid var(--card-border); margin-bottom: 12px; }
+    .admin-card h3 { font-size: 0.9rem; color: #FFCA28; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .admin-user { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--surface-bg); font-size: 0.85rem; }
+    .admin-user:last-child { border: none; }
+    .admin-user .email { color: var(--text-dim); }
+    .admin-user .actions { display: flex; gap: 6px; }
+    .admin-req { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--surface-bg); font-size: 0.85rem; }
+    .admin-req:last-child { border: none; }
+
+    .db-status { font-size: 0.75rem; color: var(--text-faint2); text-align: center; margin: 6px 0; }
+    .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--surface-alt); color: var(--text); padding: 12px 24px; border-radius: 10px; border: 1px solid var(--border); font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; text-align: center; z-index: 999; }
+    .toast.show { opacity: 1; }
+    .loading { text-align: center; padding: 40px; color: var(--text-muted); }
+    .flex { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .mt-8 { margin-top: 8px; }
+    .w-full { width: 100%; }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+  <h1>🔥 QUIZ</h1>
+  <p class="sub">answer correctly, climb the leaderboard</p>
+
+  <div class="container">
+    <div class="nav" id="nav">
+      <a data-section="quiz" class="active">Quiz</a>
+      <a data-section="leaderboard">Leaderboard</a>
+      <a data-section="customize">Customize</a>
+      <a data-section="admin" id="adminNav" style="display:none">Admin</a>
+      <a data-section="account">Account</a>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- ============ AUTH ============ -->
+    <div class="section active" id="section-auth">
+      <div class="auth-card">
+        <h2 id="authTitle">Sign In</h2>
+        <div id="authFields">
+          <div class="auth-field">
+            <label>Email</label>
+            <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email">
+          </div>
+          <div class="auth-field">
+            <label>Password</label>
+            <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password">
+          </div>
+          <div id="signupFields" style="display:none">
+            <div class="auth-field">
+              <label>Display Name</label>
+              <input type="text" id="authName" placeholder="Your name" maxlength="20">
+            </div>
+            <div class="admin-check">
+              <input type="checkbox" id="adminCheck">
+              <label for="adminCheck">Register as admin</label>
+            </div>
+            <div class="auth-field" id="adminSecretField" style="display:none">
+              <label>Admin Secret Password</label>
+              <input type="password" id="adminSecret" placeholder="Enter admin secret">
+            </div>
+          </div>
+          <div class="auth-error" id="authError"></div>
+          <div class="auth-row" style="margin-top:4px">
+            <button class="btn btn-yellow" id="authBtn">Sign In</button>
+          </div>
+          <div class="auth-divider">or</div>
+          <button class="btn btn-google" id="googleBtn" style="width:100%">
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59A14.5 14.5 0 0 1 9.5 24c0-1.59.28-3.14.76-4.59l-7.98-6.19A23.99 23.99 0 0 0 0 24c0 3.77.87 7.35 2.56 10.56l7.97-5.97z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 5.97C6.51 42.62 14.62 48 24 48z"/></svg>
+            Sign in with Google
+          </button>
+          <div class="auth-toggle">
+            <span id="authToggleText">Don't have an account?</span>
+            <a id="authToggleLink">Sign Up</a>
+          </div>
+        </div>
+        <div id="authLoader" class="loading" style="display:none">Loading...</div>
+      </div>
+    </div>
+
+    <!-- ============ QUIZ ============ -->
+    <div class="section" id="section-quiz">
+      <div class="frog-area" id="frogArea">
+        <div class="frog" id="frog">
+          <div class="frog-eye left"></div>
+          <div class="frog-eye right"></div>
+          <div class="frog-body"></div>
+          <div class="frog-cheek left frog-blush"></div>
+          <div class="frog-cheek right frog-blush"></div>
+          <div class="frog-mouth"></div>
+        </div>
+        <div class="frog-speech" id="frogSpeech">ready to <span>quiz</span>!</div>
+      </div>
+      <div class="quit-bar">
+        <button class="btn btn-red-outline btn-sm" id="quitBtn" style="display:none">■ Quit & Save Score</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="lbl">Question</div><div class="val" id="qNum">#0</div></div>
+        <div class="stat"><div class="lbl">Correct</div><div class="val" id="correctCount">0</div></div>
+        <div class="stat"><div class="lbl">Accuracy</div><div class="val" id="accuracyPct">—</div></div>
+        <div class="stat"><div class="lbl">Streak</div><div class="val" id="streak">0</div></div>
+      </div>
+      <div id="gameArea"><div class="loading">Loading questions...</div></div>
+    </div>
+
+    <!-- ============ LEADERBOARD ============ -->
+    <div class="section" id="section-leaderboard">
+      <div class="lb-section">
+        <h2>🏆 Global Leaderboard</h2>
+        <div id="leaderboard"><div class="lb-empty">loading...</div></div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" id="myScoresBtn">My Scores</button>
+          <button class="btn btn-red-outline btn-sm" id="clearBtn">Clear My Scores</button>
+        </div>
+        <div id="myScores" style="margin-top:10px;display:none"></div>
+      </div>
+    </div>
+
+    <!-- ============ CUSTOMIZE ============ -->
+    <div class="section" id="section-customize">
+      <div class="editor-card">
+        <h3>✏️ Quiz Editor</h3>
+        <div style="font-size:0.8rem;color:#666;margin-bottom:8px">
+          Add, edit, or remove questions. Changes save to the cloud instantly.
+        </div>
+        <div class="editor-tabs">
+          <button class="active" id="useDefaultTab">Default (20)</button>
+          <button id="useCustomTab">Custom</button>
+        </div>
+        <div id="customQuestions">
+          <div class="editor-toolbar">
+            <div class="question-count" id="questionCount" style="font-size:0.8rem;color:#888">0 questions</div>
+            <div class="spacer"></div>
+            <input class="search-input" id="searchInput" type="text" placeholder="🔍 Search questions...">
+          </div>
+          <div class="flex" style="margin-bottom:10px;flex-wrap:wrap">
+            <button class="btn btn-yellow btn-sm" id="addQuestionBtn">+ Add Question</button>
+            <button class="btn btn-outline btn-sm" id="exportCsvBtn">⬇ Export CSV</button>
+            <button class="btn btn-outline btn-sm" id="downloadTemplateBtn">📄 Template</button>
+            <details class="csv-area" style="display:inline-block">
+              <summary class="btn btn-outline btn-sm" style="display:inline-flex">⬆ Import CSV</summary>
+              <div class="csv-inner">
+                <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:6px">CSV format: <code style="color:#FFCA28">question,option1,option2,option3,option4,correctIndex</code> (0-3)</div>
+                <textarea id="csvInput" rows="4" style="font-size:0.8rem;font-family:monospace" placeholder="Paste CSV here...&#10;&#10;Example:&#10;What is 2+2?,1,2,3,4,3&#10;Capital of France?,London,Paris,Berlin,Madrid,1"></textarea>
+                <div class="flex" style="margin-top:6px">
+                  <button class="btn btn-yellow btn-sm" id="importCsvBtn">Import</button>
+                  <label class="btn btn-outline btn-sm" style="cursor:pointer">📁 Upload File<input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none"></label>
+                  <button class="btn btn-red-outline btn-sm" id="clearAllBtn">Delete All</button>
+                </div>
+                <div id="csvStatus" style="font-size:0.75rem;color:var(--text-dim);margin-top:4px"></div>
+              </div>
+            </details>
+          </div>
+          <div id="questionsList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ ADMIN ============ -->
+    <div class="section" id="section-admin">
+      <div class="admin-card">
+        <h3>👥 Users</h3>
+        <div id="adminUsers"><div class="lb-empty">Loading users...</div></div>
+      </div>
+      <div class="admin-card">
+        <h3>📨 Admin Requests</h3>
+        <div id="adminRequests"><div class="lb-empty">Loading requests...</div></div>
+      </div>
+      <div class="admin-card">
+        <h3>📊 Quiz Stats</h3>
+        <div id="adminStats"><div class="lb-empty">Loading stats...</div></div>
+      </div>
+      <button class="btn btn-red-outline btn-sm" id="adminSignOut" style="margin-top:8px">Sign Out</button>
+    </div>
+
+    <!-- ============ ACCOUNT ============ -->
+    <div class="section" id="section-account">
+      <div class="user-bar">
+        <div class="info">
+          <div class="avatar" id="avatarLetter">?</div>
+          <div>
+            <div class="name" id="accountName">—</div>
+            <div class="email" id="accountEmail">—</div>
+          </div>
+        </div>
+        <div id="accountBadge"></div>
+      </div>
+      <div class="admin-check" style="margin:12px 0">
+        <input type="checkbox" id="reqAdminCheck">
+        <label for="reqAdminCheck">I want admin access</label>
+      </div>
+      <div id="reqAdminSection" style="display:none">
+        <div class="auth-field">
+          <label>Admin Secret (leave blank to request)</label>
+          <input type="password" id="reqAdminSecret" placeholder="Admin secret or leave blank">
+        </div>
+        <button class="btn btn-yellow btn-sm" id="submitAdminReq">Submit</button>
+        <div id="adminReqStatus" style="font-size:0.8rem;color:#888;margin-top:6px"></div>
+      </div>
+      <div style="margin-top:20px">
+        <button class="btn btn-red-outline btn-sm" id="signOutBtn">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, updateProfile } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, where, getDocs, deleteDoc, doc, setDoc, getDoc, updateDoc, serverTimestamp, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCq5wEDETHE-yMXIKWyAt0HliJbtbqRoqk",
+      authDomain: "project-2941440371854697185.firebaseapp.com",
+      projectId: "project-2941440371854697185",
+      storageBucket: "project-2941440371854697185.firebasestorage.app",
+      messagingSenderId: "644229043550",
+      appId: "1:644229043550:web:f0448422fec368f386ebcf",
+      measurementId: "G-JENL46N6V0"
+    };
+    const ADMIN_SECRET = "MIGOS_ADMIN_2024";
+    const USERS_COLLECTION = "quiz_users";
+    const SCORES_COLLECTION = "quiz_scores";
+    const REQUESTS_COLLECTION = "admin_requests";
+    const QUESTIONS_COLLECTION = "quiz_questions";
+
+    if (!getApps().length) initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getFirestore();
+
+    // === DOM ===
+    const sections = {
+      auth: document.getElementById("section-auth"),
+      quiz: document.getElementById("section-quiz"),
+      leaderboard: document.getElementById("section-leaderboard"),
+      customize: document.getElementById("section-customize"),
+      admin: document.getElementById("section-admin"),
+      account: document.getElementById("section-account"),
+    };
+    const navLinks = document.querySelectorAll(".nav a");
+    const adminNav = document.getElementById("adminNav");
+    const toast = document.getElementById("toast");
+
+    const authTitle = document.getElementById("authTitle");
+    const authEmail = document.getElementById("authEmail");
+    const authPassword = document.getElementById("authPassword");
+    const authName = document.getElementById("authName");
+    const authBtn = document.getElementById("authBtn");
+    const googleBtn = document.getElementById("googleBtn");
+    const authError = document.getElementById("authError");
+    const authToggleLink = document.getElementById("authToggleLink");
+    const authToggleText = document.getElementById("authToggleText");
+    const signupFields = document.getElementById("signupFields");
+    const adminCheck = document.getElementById("adminCheck");
+    const adminSecretField = document.getElementById("adminSecretField");
+    const adminSecret = document.getElementById("adminSecret");
+
+    const accountName = document.getElementById("accountName");
+    const accountEmail = document.getElementById("accountEmail");
+    const accountBadge = document.getElementById("accountBadge");
+    const avatarLetter = document.getElementById("avatarLetter");
+    const signOutBtn = document.getElementById("signOutBtn");
+    const reqAdminCheck = document.getElementById("reqAdminCheck");
+    const reqAdminSection = document.getElementById("reqAdminSection");
+    const reqAdminSecret = document.getElementById("reqAdminSecret");
+    const submitAdminReq = document.getElementById("submitAdminReq");
+    const adminReqStatus = document.getElementById("adminReqStatus");
+
+    const frog = document.getElementById("frog");
+    const frogSpeech = document.getElementById("frogSpeech");
+    const qNum = document.getElementById("qNum");
+    const correctCount = document.getElementById("correctCount");
+    const accuracyPct = document.getElementById("accuracyPct");
+    const streak = document.getElementById("streak");
+    const quitBtn = document.getElementById("quitBtn");
+    const gameArea = document.getElementById("gameArea");
+
+    const lbEl = document.getElementById("leaderboard");
+    const clearBtn = document.getElementById("clearBtn");
+    const myScoresBtn = document.getElementById("myScoresBtn");
+    const myScores = document.getElementById("myScores");
+
+    const adminUsers = document.getElementById("adminUsers");
+    const adminRequests = document.getElementById("adminRequests");
+    const adminStats = document.getElementById("adminStats");
+    const adminSignOut = document.getElementById("adminSignOut");
+
+    const useDefaultTab = document.getElementById("useDefaultTab");
+    const useCustomTab = document.getElementById("useCustomTab");
+    const questionCount = document.getElementById("questionCount");
+    const questionsList = document.getElementById("questionsList");
+    const addQuestionBtn = document.getElementById("addQuestionBtn");
+    const searchInput = document.getElementById("searchInput");
+    const exportCsvBtn = document.getElementById("exportCsvBtn");
+    const importCsvBtn = document.getElementById("importCsvBtn");
+    const csvFileInput = document.getElementById("csvFileInput");
+    const csvInput = document.getElementById("csvInput");
+    const csvStatus = document.getElementById("csvStatus");
+    const clearAllBtn = document.getElementById("clearAllBtn");
+    const downloadTemplateBtn = document.getElementById("downloadTemplateBtn");
+    const themeToggle = document.getElementById("themeToggle");
+
+    // === STATE ===
+    let currentUser = null;
+    let isAdmin = false;
+    let userProfile = null;
+    let isSigningUp = false;
+    let quizIndex = 0;
+    let quizTotal = 0;
+    let quizCorrect = 0;
+    let quizStreak = 0;
+    let quizBestStreak = 0;
+    let quizAnswered = false;
+    let quizActive = false;
+    let quizQuestions = [];
+    let topScores = [];
+    let allUsers = [];
+    let adminRequestsList = [];
+    let userScores = [];
+    let allScores = [];
+    let unsubs = [];
+    let usingCustom = false;
+    let customQuestions = [];
+
+    // === DEFAULT QUESTIONS ===
+    const DEFAULT_QUESTIONS = [
+      { q: "What year did the Berlin Wall fall?", opts: ["1987", "1989", "1991", "1993"], ans: 1 },
+      { q: "Which planet has the most moons?", opts: ["Jupiter", "Saturn", "Uranus", "Neptune"], ans: 1 },
+      { q: "What is the chemical symbol for gold?", opts: ["Go", "Gd", "Au", "Ag"], ans: 2 },
+      { q: "Who painted the ceiling of the Sistine Chapel?", opts: ["Da Vinci", "Raphael", "Michelangelo", "Donatello"], ans: 2 },
+      { q: "What is the square root of 144?", opts: ["10", "11", "12", "13"], ans: 2 },
+      { q: "Which country invented pizza?", opts: ["France", "Spain", "Italy", "Greece"], ans: 2 },
+      { q: "What language is Swift mainly used for?", opts: ["Android", "iOS", "Web", "Desktop"], ans: 1 },
+      { q: "How many bones are in the adult human body?", opts: ["106", "206", "306", "406"], ans: 1 },
+      { q: "What is the capital of Australia?", opts: ["Sydney", "Melbourne", "Canberra", "Perth"], ans: 2 },
+      { q: "Which element is needed for fire?", opts: ["Nitrogen", "Oxygen", "Hydrogen", "Carbon"], ans: 1 },
+      { q: "Who wrote '1984'?", opts: ["Huxley", "Orwell", "Bradbury", "Zamyatin"], ans: 1 },
+      { q: "What does HTTP stand for?", opts: ["Hyper Text Transfer Protocol", "High Transfer Text Protocol", "Hyper Text Transmission Process", "High Tech Transfer Protocol"], ans: 0 },
+      { q: "What is the speed of light in km/s (approx)?", opts: ["300,000", "150,000", "500,000", "1,000,000"], ans: 0 },
+      { q: "Which ocean is the largest?", opts: ["Atlantic", "Indian", "Arctic", "Pacific"], ans: 3 },
+      { q: "What year was the first iPhone released?", opts: ["2005", "2006", "2007", "2008"], ans: 2 },
+      { q: "How many Harry Potter books are there?", opts: ["6", "7", "8", "9"], ans: 1 },
+      { q: "What does CSS stand for?", opts: ["Computer Style Sheets", "Cascading Style Sheets", "Creative Style System", "Colorful Style Sheets"], ans: 1 },
+      { q: "Which animal is the fastest on land?", opts: ["Lion", "Cheetah", "Horse", "Gazelle"], ans: 1 },
+      { q: "What is the smallest country in the world?", opts: ["Monaco", "San Marino", "Vatican City", "Liechtenstein"], ans: 2 },
+      { q: "In what year did World War II end?", opts: ["1943", "1944", "1945", "1946"], ans: 2 },
+    ];
+
+    // === UTILITY ===
+    function toastMsg(msg) {
+      toast.textContent = msg;
+      toast.style.background = "#1e1e1e";
+      toast.style.borderColor = "#333";
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2500);
+    }
+
+    function escHtml(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function showSection(id) {
+      Object.values(sections).forEach(s => s.classList.remove("active"));
+      if (sections[id]) sections[id].classList.add("active");
+      navLinks.forEach(a => a.classList.toggle("active", a.dataset.section === id));
+    }
+
+    // === FROG ===
+    function frogMood(mood, speech) {
+      frog.className = "frog " + mood;
+      if (mood === "happy") frogSpeech.innerHTML = speech || '<span>correct!</span> 🐸';
+      else if (mood === "sad") frogSpeech.innerHTML = speech || 'aww, <span>wrong!</span>';
+      else if (mood === "wiggle") frogSpeech.innerHTML = speech || '<span>nice streak!</span>';
+      else frogSpeech.innerHTML = speech || 'ready to <span>quiz</span>!';
+    }
+
+    // === NAV ===
+    navLinks.forEach(a => {
+      a.addEventListener("click", () => {
+        const section = a.dataset.section;
+        if (section === "admin" && (!currentUser || !isAdmin)) return;
+        if (section === "customize" && !currentUser) { toastMsg("Sign in first"); return; }
+        if (section !== "auth") showSection(section);
+        if (section === "customize") renderEditor();
+      });
+    });
+
+    // === AUTH ===
+    authToggleLink.addEventListener("click", () => {
+      isSigningUp = !isSigningUp;
+      authTitle.textContent = isSigningUp ? "Sign Up" : "Sign In";
+      authBtn.textContent = isSigningUp ? "Sign Up" : "Sign In";
+      authToggleText.textContent = isSigningUp ? "Already have an account?" : "Don't have an account?";
+      authToggleLink.textContent = isSigningUp ? "Sign In" : "Sign Up";
+      signupFields.style.display = isSigningUp ? "block" : "none";
+      authError.textContent = "";
+    });
+
+    adminCheck.addEventListener("change", () => {
+      adminSecretField.style.display = adminCheck.checked ? "block" : "none";
+    });
+
+    async function handleAuth() {
+      const email = authEmail.value.trim();
+      const password = authPassword.value;
+      authError.textContent = "";
+      if (!email || !password) { authError.textContent = "Email and password required"; return; }
+      if (password.length < 6) { authError.textContent = "Password must be 6+ characters"; return; }
+      authBtn.disabled = true;
+      authBtn.textContent = "Loading...";
+      try {
+        if (isSigningUp) {
+          const displayName = authName.value.trim() || email.split("@")[0];
+          const adminSecretVal = adminSecret.value.trim();
+          if (adminCheck.checked && adminSecretVal !== ADMIN_SECRET) {
+            authError.textContent = "Invalid admin secret";
+            authBtn.disabled = false;
+            authBtn.textContent = "Sign Up";
+            return;
+          }
+          const cred = await createUserWithEmailAndPassword(auth, email, password);
+          await updateProfile(cred.user, { displayName });
+          await setDoc(doc(db, USERS_COLLECTION, cred.user.uid), {
+            uid: cred.user.uid, email, displayName,
+            isAdmin: adminCheck.checked && adminSecretVal === ADMIN_SECRET,
+            createdAt: serverTimestamp(),
+          });
+          toastMsg("Account created!");
+        } else {
+          await signInWithEmailAndPassword(auth, email, password);
+        }
+      } catch (e) {
+        const map = {
+          "auth/user-not-found": "No account with this email",
+          "auth/wrong-password": "Wrong password",
+          "auth/email-already-in-use": "Email already in use",
+          "auth/invalid-credential": "Invalid email or password",
+        };
+        authError.textContent = map[e.code] || e.message;
+      } finally {
+        authBtn.disabled = false;
+        authBtn.textContent = isSigningUp ? "Sign Up" : "Sign In";
+      }
+    }
+
+    authBtn.addEventListener("click", handleAuth);
+    authPassword.addEventListener("keydown", e => { if (e.key === "Enter") handleAuth(); });
+
+    googleBtn.addEventListener("click", async () => {
+      try {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        const snap = await getDoc(doc(db, USERS_COLLECTION, result.user.uid));
+        if (!snap.exists()) {
+          await setDoc(doc(db, USERS_COLLECTION, result.user.uid), {
+            uid: result.user.uid, email: result.user.email,
+            displayName: result.user.displayName || result.user.email?.split("@")[0],
+            isAdmin: false, createdAt: serverTimestamp(),
+          });
+        }
+        toastMsg("Signed in with Google!");
+      } catch (e) { toastMsg("Google sign-in failed"); }
+    });
+
+    signOutBtn.addEventListener("click", async () => { await signOut(auth); });
+    adminSignOut.addEventListener("click", () => signOut(auth));
+
+    // === ACCOUNT ===
+    reqAdminCheck.addEventListener("change", () => {
+      reqAdminSection.style.display = reqAdminCheck.checked ? "block" : "none";
+    });
+
+    submitAdminReq.addEventListener("click", async () => {
+      if (!currentUser) return;
+      const secret = reqAdminSecret.value.trim();
+      adminReqStatus.textContent = "";
+      if (secret === ADMIN_SECRET) {
+        try {
+          await updateDoc(doc(db, USERS_COLLECTION, currentUser.uid), { isAdmin: true });
+          isAdmin = true;
+          renderAccount();
+          adminNav.style.display = "";
+          toastMsg("You are now an admin!");
+          adminReqStatus.textContent = "Admin granted!";
+        } catch (e) { adminReqStatus.textContent = "Error: " + e.message; }
+        return;
+      }
+      try {
+        await setDoc(doc(db, REQUESTS_COLLECTION, currentUser.uid), {
+          uid: currentUser.uid, email: currentUser.email,
+          displayName: currentUser.displayName || currentUser.email?.split("@")[0],
+          status: "pending", createdAt: serverTimestamp(),
+        });
+        adminReqStatus.textContent = "Request sent! Wait for an admin to approve.";
+        toastMsg("Admin request submitted");
+      } catch (e) { adminReqStatus.textContent = "Error: " + e.message; }
+    });
+
+    // === AUTH STATE ===
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      if (user) {
+        try {
+          const snap = await getDoc(doc(db, USERS_COLLECTION, user.uid));
+          if (snap.exists()) {
+            userProfile = snap.data();
+            isAdmin = userProfile.isAdmin || false;
+          } else {
+            userProfile = { uid: user.uid, email: user.email, displayName: user.displayName || "User", isAdmin: false };
+            isAdmin = false;
+            await setDoc(doc(db, USERS_COLLECTION, user.uid), { ...userProfile, createdAt: serverTimestamp() });
+          }
+        } catch (e) {
+          userProfile = { uid: user.uid, email: user.email, displayName: user.displayName || "User", isAdmin: false };
+          isAdmin = false;
+        }
+        showSection("quiz");
+        adminNav.style.display = isAdmin ? "" : "none";
+        renderAccount();
+        loadAndStartQuiz();
+        subscribeLeaderboard();
+        if (isAdmin) subscribeAdminData();
+      } else {
+        currentUser = null; isAdmin = false; userProfile = null;
+        showSection("auth");
+        adminNav.style.display = "none";
+        unsubs.forEach(u => u()); unsubs = [];
+      }
+    });
+
+    function renderAccount() {
+      const name = userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split("@")[0] || "User";
+      accountName.textContent = name;
+      accountEmail.textContent = currentUser?.email || "—";
+      avatarLetter.textContent = name.charAt(0).toUpperCase();
+      accountBadge.innerHTML = isAdmin ? '<span class="badge">Admin</span>' : '<span style="font-size:0.75rem;color:#666">User</span>';
+      reqAdminCheck.checked = false;
+      reqAdminSection.style.display = "none";
+      reqAdminSecret.value = "";
+      adminReqStatus.textContent = "";
+    }
+
+    // === QUIZ ===
+    async function loadAndStartQuiz() {
+      // Load custom questions from Firestore
+      customQuestions = [];
+      try {
+        const q = query(collection(db, QUESTIONS_COLLECTION), orderBy("createdAt", "asc"));
+        const snap = await getDocs(q);
+        snap.forEach(d => customQuestions.push({ id: d.id, ...d.data() }));
+      } catch (e) { console.log("No custom questions yet"); }
+
+      usingCustom = customQuestions.length > 0;
+      updateEditorTabs();
+      startQuiz();
+    }
+
+    function getActiveQuestions() {
+      return usingCustom && customQuestions.length > 0 ? customQuestions : DEFAULT_QUESTIONS;
+    }
+
+    function startQuiz() {
+      quizIndex = 0;
+      quizTotal = 0;
+      quizCorrect = 0;
+      quizStreak = 0;
+      quizBestStreak = 0;
+      quizActive = true;
+      quizQuestions = shuffle([...getActiveQuestions()]);
+      quitBtn.style.display = "";
+      frogMood("", "infinite mode — <span>go!</span> 🐸");
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      if (!quizActive) return;
+      if (quizIndex >= quizQuestions.length) {
+        quizQuestions = shuffle([...getActiveQuestions()]);
+        quizIndex = 0;
+      }
+      quizAnswered = false;
+      const q = quizQuestions[quizIndex];
+      qNum.textContent = `#${quizTotal + 1}`;
+      correctCount.textContent = quizCorrect;
+      streak.textContent = quizStreak;
+      const pct = quizTotal > 0 ? Math.round((quizCorrect / quizTotal) * 100) : 0;
+      accuracyPct.textContent = quizTotal > 0 ? `${pct}%` : '—';
+
+      let html = `<div class="question-card">`;
+      html += `<div class="q-number">Question ${quizTotal + 1}</div>`;
+      html += `<div class="q-text">${escHtml(q.q)}</div>`;
+      html += `<div class="options">`;
+      q.opts.forEach((opt, i) => {
+        html += `<button class="option" data-idx="${i}">${escHtml(opt)}</button>`;
+      });
+      html += `</div></div>`;
+      gameArea.innerHTML = html;
+
+      document.querySelectorAll(".option").forEach(btn => {
+        btn.addEventListener("click", () => handleAnswer(parseInt(btn.dataset.idx)));
+      });
+    }
+
+    function handleAnswer(idx) {
+      if (quizAnswered || !quizActive) return;
+      quizAnswered = true;
+      quizTotal++;
+      const q = quizQuestions[quizIndex];
+      const btns = document.querySelectorAll(".option");
+      btns.forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === q.ans) btn.classList.add("correct");
+        else if (i === idx && idx !== q.ans) btn.classList.add("wrong");
+      });
+
+      if (idx === q.ans) {
+        quizCorrect++;
+        quizStreak++;
+        if (quizStreak > quizBestStreak) quizBestStreak = quizStreak;
+        if (quizStreak >= 3) frogMood("wiggle", `<span>${quizStreak} streak!</span> 🐸`);
+        else frogMood("happy", '<span>correct!</span> 🐸');
+      } else {
+        quizStreak = 0;
+        frogMood("sad", 'aww, <span>wrong!</span>');
+      }
+      correctCount.textContent = quizCorrect;
+      streak.textContent = quizStreak;
+      const pct = Math.round((quizCorrect / quizTotal) * 100);
+      accuracyPct.textContent = `${pct}%`;
+
+      const card = document.querySelector(".question-card");
+      const next = document.createElement("button");
+      next.className = "btn btn-yellow";
+      next.style.marginTop = "12px";
+      next.textContent = "Next →";
+      next.addEventListener("click", () => {
+        quizIndex++;
+        renderQuestion();
+      });
+      card.appendChild(next);
+    }
+
+    quitBtn.addEventListener("click", () => {
+      if (!quizActive || quizTotal === 0) return;
+      quizActive = false;
+      quitBtn.style.display = "none";
+      const pct = Math.round((quizCorrect / quizTotal) * 100);
+      let msg = "Keep going next time!";
+      if (pct >= 90) { msg = "Incredible! 🏆"; frogMood("happy", '<span>AMAZING RUN!</span> 🏆'); }
+      else if (pct >= 70) frogMood("happy", '<span>solid run!</span> 🐸');
+      else if (pct >= 50) frogMood("happy", '<span>not bad!</span> 🐸');
+      else frogMood("sad", 'keep <span>practicing!</span>');
+
+      gameArea.innerHTML = `
+        <div class="results-card">
+          <div class="big">${quizCorrect}/${quizTotal}</div>
+          <div class="sub">${pct}% · ${msg}</div>
+          <div class="sub" style="margin-top:8px;font-size:0.85rem">Best streak: ${quizBestStreak} · ${quizTotal} questions</div>
+          <button class="btn btn-yellow" id="playAgain" style="margin-top:16px">Play Again</button>
+        </div>
+      `;
+      document.getElementById("playAgain").addEventListener("click", () => startQuiz());
+      saveQuizScore(quizCorrect, quizTotal, quizBestStreak);
+    });
+
+    async function saveQuizScore(correct, total, streakVal) {
+      if (!currentUser) return;
+      const accuracy = Math.round((correct / total) * 100);
+      try {
+        await addDoc(collection(db, SCORES_COLLECTION), {
+          uid: currentUser.uid, email: currentUser.email,
+          name: currentUser.displayName || currentUser.email?.split("@")[0] || "User",
+          correct, total, accuracy, streak: streakVal,
+          createdAt: Timestamp.now()
+        });
+      } catch (e) { console.error("Save error:", e); }
+    }
+
+    // === LEADERBOARD ===
+    function subscribeLeaderboard() {
+      const q = query(collection(db, SCORES_COLLECTION), orderBy("correct", "desc"), limit(20));
+      const unsub = onSnapshot(q, (snap) => {
+        topScores = []; allScores = [];
+        snap.forEach(d => { const data = d.data(); topScores.push({ id: d.id, ...data }); allScores.push({ id: d.id, ...data }); });
+        renderLeaderboard();
+      }, () => { lbEl.innerHTML = '<div class="lb-empty">DB error — enable Firestore</div>'; });
+      unsubs.push(unsub);
+    }
+
+    function renderLeaderboard() {
+      if (!topScores.length) { lbEl.innerHTML = '<div class="lb-empty">No scores yet — be the first!</div>'; return; }
+      lbEl.innerHTML = topScores.map((s, i) =>
+        `<div class="lb-entry">
+          <span class="rank">#${i + 1}</span>
+          <span class="name">${escHtml(s.name || "anon")}${s.uid === currentUser?.uid ? ' (you)' : ''}</span>
+          <span class="score">${s.correct}✔️ / ${s.total || '—'} · ${s.accuracy || 0}%</span>
+        </div>`
+      ).join("");
+    }
+
+    myScoresBtn.addEventListener("click", async () => {
+      if (!currentUser) return;
+      if (myScores.style.display !== "none") { myScores.style.display = "none"; return; }
+      try {
+        const q = query(collection(db, SCORES_COLLECTION), where("uid", "==", currentUser.uid), orderBy("createdAt", "desc"), limit(10));
+        const snap = await getDocs(q);
+        userScores = [];
+        snap.forEach(d => userScores.push({ id: d.id, ...d.data() }));
+        myScores.innerHTML = userScores.length
+          ? userScores.map((s, i) => `<div class="lb-entry" style="font-size:0.8rem"><span class="rank">#${i+1}</span><span class="name">${s.correct || 0}✔️/${s.total || 0} · ${s.accuracy || 0}% · streak ${s.streak || 0}</span><span class="time" style="color:#666;font-size:0.75rem">${s.createdAt?.toDate?.()?.toLocaleDateString() || ''}</span></div>`).join("")
+          : '<div class="lb-empty">No scores yet</div>';
+        myScores.style.display = "block";
+      } catch (e) { toastMsg("Error loading scores"); }
+    });
+
+    clearBtn.addEventListener("click", async () => {
+      if (!currentUser || !confirm("Clear all your scores?")) return;
+      try {
+        const q = query(collection(db, SCORES_COLLECTION), where("uid", "==", currentUser.uid));
+        const snap = await getDocs(q);
+        for (const d of snap.docs) await deleteDoc(doc(db, SCORES_COLLECTION, d.id));
+        toastMsg(`Cleared ${snap.size} score(s)`);
+        myScores.style.display = "none";
+      } catch (e) { toastMsg("Error clearing scores"); }
+    });
+
+    // === QUIZ EDITOR ===
+    function updateEditorTabs() {
+      useDefaultTab.classList.toggle("active", !usingCustom);
+      useCustomTab.classList.toggle("active", usingCustom);
+      if (customQuestions.length > 0) {
+        useCustomTab.textContent = `Custom (${customQuestions.length})`;
+      } else {
+        useCustomTab.textContent = "Custom (0)";
+      }
+    }
+
+    useDefaultTab.addEventListener("click", () => {
+      if (usingCustom) { usingCustom = false; updateEditorTabs(); startQuiz(); toastMsg("Switched to default questions"); }
+    });
+
+    useCustomTab.addEventListener("click", () => {
+      if (!usingCustom && customQuestions.length > 0) {
+        usingCustom = true; updateEditorTabs(); startQuiz(); toastMsg("Switched to custom questions");
+      } else if (customQuestions.length === 0) {
+        toastMsg("No custom questions yet — add some!");
+      }
+    });
+
+    let editingIdx = -1;
+    let searchTerm = "";
+
+    searchInput.addEventListener("input", () => {
+      searchTerm = searchInput.value.trim().toLowerCase();
+      renderEditor();
+    });
+
+    function getFilteredQuestions() {
+      if (!searchTerm) return customQuestions;
+      return customQuestions.filter(q =>
+        q.q.toLowerCase().includes(searchTerm) ||
+        q.opts.some(o => o.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    function renderEditor() {
+      if (!currentUser) { questionsList.innerHTML = '<div class="lb-empty">Sign in to edit questions</div>'; return; }
+      const filtered = getFilteredQuestions();
+      const showing = searchTerm ? ` (showing ${filtered.length})` : "";
+      questionCount.textContent = `${customQuestions.length} custom question${customQuestions.length !== 1 ? 's' : ''}${showing}`;
+      if (!filtered.length) {
+        questionsList.innerHTML = searchTerm
+          ? '<div class="lb-empty">No questions match your search</div>'
+          : '<div class="lb-empty">No custom questions yet. Add some above!</div>';
+        return;
+      }
+      questionsList.innerHTML = filtered.map((q, i) => {
+        const realIdx = customQuestions.indexOf(q);
+        return `<div class="q-item">
+          <div class="q-preview">
+            <div class="q-preview-text">${realIdx + 1}. ${escHtml(q.q)}</div>
+            <div class="q-preview-opts">${q.opts.map((o, j) => j === q.ans ? `<strong style="color:#4caf50">${escHtml(o)}</strong>` : escHtml(o)).join(" · ")}</div>
+          </div>
+          <div class="q-actions">
+            <button class="btn btn-outline btn-sm btn-icon edit-q-btn" data-idx="${realIdx}">✏️</button>
+            <button class="btn btn-red-outline btn-sm btn-icon delete-q-btn" data-idx="${realIdx}">✕</button>
+          </div>
+        </div>`;
+      }).join("");
+
+      questionsList.querySelectorAll(".edit-q-btn").forEach(btn => {
+        btn.addEventListener("click", () => showEditForm(parseInt(btn.dataset.idx)));
+      });
+      questionsList.querySelectorAll(".delete-q-btn").forEach(btn => {
+        btn.addEventListener("click", () => deleteQuestion(parseInt(btn.dataset.idx)));
+      });
+    }
+
+    function showEditForm(idx) {
+      if (editingIdx !== -1) { document.getElementById("editForm")?.remove(); }
+      editingIdx = idx;
+      const q = idx >= 0 && idx < customQuestions.length ? customQuestions[idx] : { q: "", opts: ["", "", "", ""], ans: 0 };
+      const isNew = idx === -1 || idx >= customQuestions.length;
+
+      const form = document.createElement("div");
+      form.id = "editForm";
+      form.className = "editor-card";
+      form.innerHTML = `
+        <h3>${isNew ? "Add Question" : "Edit Question"}</h3>
+        <div class="inline-form">
+          <div>
+            <label>Question</label>
+            <textarea id="eqText" rows="2">${escHtml(q.q)}</textarea>
+          </div>
+          ${q.opts.map((opt, i) => `
+            <div>
+              <label>Option ${i + 1}</label>
+              <div class="opt-row">
+                <input class="eq-opt" data-idx="${i}" value="${escHtml(opt)}" placeholder="Option ${i + 1}">
+                <label style="display:flex;align-items:center;gap:4px;white-space:nowrap;font-size:0.75rem;flex-shrink:0">
+                  <input type="radio" name="eqCorrect" class="opt-correct" value="${i}" ${i === q.ans ? "checked" : ""}> correct
+                </label>
+              </div>
+            </div>
+          `).join("")}
+          <div class="flex">
+            <button class="btn btn-yellow btn-sm" id="saveQuestionBtn">${isNew ? "Add" : "Save"}</button>
+            <button class="btn btn-outline btn-sm" id="cancelEditBtn">Cancel</button>
+          </div>
+        </div>
+      `;
+      questionsList.prepend(form);
+      document.getElementById("saveQuestionBtn").addEventListener("click", () => saveQuestionForm(isNew));
+      document.getElementById("cancelEditBtn").addEventListener("click", () => { form.remove(); editingIdx = -1; });
+    }
+
+    async function saveQuestionForm(isNew) {
+      const text = document.getElementById("eqText").value.trim();
+      const opts = [...document.querySelectorAll(".eq-opt")].map(el => el.value.trim());
+      const correctEl = document.querySelector('input[name="eqCorrect"]:checked');
+      if (!text) { toastMsg("Question text is required"); return; }
+      if (opts.some(o => !o)) { toastMsg("All options must be filled"); return; }
+      if (!correctEl) { toastMsg("Select the correct answer"); return; }
+      const ans = parseInt(correctEl.value);
+      const question = { q: text, opts, ans, createdAt: serverTimestamp() };
+
+      try {
+        if (isNew) {
+          const docRef = await addDoc(collection(db, QUESTIONS_COLLECTION), question);
+          customQuestions.push({ id: docRef.id, ...question, createdAt: new Date() });
+        } else {
+          const existing = customQuestions[editingIdx === -1 ? 0 : editingIdx];
+          if (existing?.id) {
+            await updateDoc(doc(db, QUESTIONS_COLLECTION, existing.id), { q: text, opts, ans });
+            customQuestions[editingIdx] = { ...existing, q: text, opts, ans };
+          }
+        }
+        document.getElementById("editForm")?.remove();
+        editingIdx = -1;
+        questionCount.textContent = `${customQuestions.length} custom question(s)`;
+        renderEditor();
+        toastMsg(isNew ? "Question added!" : "Question saved!");
+        if (usingCustom) startQuiz();
+      } catch (e) { toastMsg("Save error: " + e.message); }
+    }
+
+    addQuestionBtn.addEventListener("click", () => showEditForm(-1));
+
+    async function deleteQuestion(idx) {
+      const q = customQuestions[idx];
+      if (!q || !q.id) return;
+      if (!confirm(`Delete: "${q.q.substring(0, 40)}..."?`)) return;
+      try {
+        await deleteDoc(doc(db, QUESTIONS_COLLECTION, q.id));
+        customQuestions.splice(idx, 1);
+        renderEditor();
+        questionCount.textContent = `${customQuestions.length} custom question(s)`;
+        toastMsg("Question deleted");
+        if (usingCustom) startQuiz();
+      } catch (e) { toastMsg("Delete error: " + e.message); }
+    }
+
+    // === CSV IMPORT ===
+    function parseCSV(text) {
+      const lines = text.split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#"));
+      const questions = [];
+      const errors = [];
+      lines.forEach((line, i) => {
+        try {
+          const parts = line.includes("\t") ? line.split("\t") : parseCSVLine(line);
+          if (parts.length < 6) { errors.push(`Line ${i + 1}: need 6 columns, got ${parts.length}`); return; }
+          const q = parts[0].trim();
+          const opts = parts.slice(1, 5).map(s => s.trim());
+          const ans = parseInt(parts[5].trim());
+          if (!q) { errors.push(`Line ${i + 1}: empty question`); return; }
+          if (opts.some(o => !o)) { errors.push(`Line ${i + 1}: empty option`); return; }
+          if (isNaN(ans) || ans < 0 || ans > 3) { errors.push(`Line ${i + 1}: correctIndex must be 0-3, got ${parts[5]}`); return; }
+          questions.push({ q, opts, ans });
+        } catch (e) { errors.push(`Line ${i + 1}: parse error — ${e.message}`); }
+      });
+      return { questions, errors };
+    }
+
+    function parseCSVLine(str) {
+      const result = [];
+      let cur = "";
+      let inQuotes = false;
+      for (let i = 0; i < str.length; i++) {
+        const c = str[i];
+        if (c === '"') {
+          if (inQuotes && str[i + 1] === '"') { cur += '"'; i++; }
+          else inQuotes = !inQuotes;
+        } else if (c === "," && !inQuotes) {
+          result.push(cur);
+          cur = "";
+        } else { cur += c; }
+      }
+      result.push(cur);
+      return result;
+    }
+
+    importCsvBtn.addEventListener("click", async () => {
+      const text = csvInput.value.trim();
+      if (!text) { csvStatus.textContent = "Paste some CSV first!"; return; }
+      const { questions, errors } = parseCSV(text);
+      if (!questions.length) { csvStatus.textContent = "No valid questions found. " + errors.join("; "); return; }
+      csvStatus.textContent = `Importing ${questions.length} question(s)...`;
+      let imported = 0;
+      for (const q of questions) {
+        try {
+          const docRef = await addDoc(collection(db, QUESTIONS_COLLECTION), { ...q, createdAt: serverTimestamp() });
+          customQuestions.push({ id: docRef.id, ...q, createdAt: new Date() });
+          imported++;
+        } catch (e) { errors.push(`Failed to save: "${q.q.substring(0, 30)}..." — ${e.message}`); }
+      }
+      renderEditor();
+      updateEditorTabs();
+      if (usingCustom) startQuiz();
+      const errMsg = errors.length ? `. Errors: ${errors.slice(0, 3).join("; ")}${errors.length > 3 ? ` (+${errors.length - 3} more)` : ""}` : "";
+      csvStatus.textContent = `✅ Imported ${imported} question(s)${errMsg}`;
+      if (imported > 0) csvInput.value = "";
+    });
+
+    csvFileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        csvInput.value = ev.target.result;
+        csvStatus.textContent = `Loaded "${file.name}" (${(file.size / 1024).toFixed(1)} KB)`;
+      };
+      reader.readAsText(file);
+    });
+
+    // === CSV EXPORT ===
+    exportCsvBtn.addEventListener("click", () => {
+      if (!customQuestions.length) { toastMsg("No custom questions to export"); return; }
+      const header = "# question,option1,option2,option3,option4,correctIndex";
+      const rows = customQuestions.map(q => {
+        const fields = [q.q, ...q.opts, String(q.ans)];
+        return fields.map(f => f.includes(",") || f.includes('"') ? `"${f.replace(/"/g, '""')}"` : f).join(",");
+      });
+      const csv = [header, ...rows].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `quiz_questions_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toastMsg("Exported!");
+    });
+
+    // === BULK DELETE ===
+    clearAllBtn.addEventListener("click", async () => {
+      if (!customQuestions.length) { toastMsg("No questions to delete"); return; }
+      if (!confirm(`Delete ALL ${customQuestions.length} custom questions? This cannot be undone.`)) return;
+      let deleted = 0;
+      for (const q of [...customQuestions]) {
+        try {
+          if (q.id) await deleteDoc(doc(db, QUESTIONS_COLLECTION, q.id));
+          customQuestions.splice(customQuestions.indexOf(q), 1);
+          deleted++;
+        } catch (e) { console.error("Delete error:", e); }
+      }
+      renderEditor();
+      updateEditorTabs();
+      questionCount.textContent = `0 questions`;
+      toastMsg(`Deleted ${deleted} question(s)`);
+      if (usingCustom) startQuiz();
+    });
+
+    // === THEME ===
+    const savedTheme = localStorage.getItem("quiz_theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme === "light" ? "light" : "dark");
+    themeToggle.textContent = savedTheme === "light" ? "☀️" : "🌙";
+
+    themeToggle.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next = current === "light" ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("quiz_theme", next);
+      themeToggle.textContent = next === "light" ? "☀️" : "🌙";
+    });
+
+    // === CSV TEMPLATE ===
+    downloadTemplateBtn.addEventListener("click", () => {
+      const csv = `# question,option1,option2,option3,option4,correctIndex
+What is the capital of France?,London,Paris,Berlin,Madrid,1
+Which planet is known as the Red Planet?,Venus,Mars,Jupiter,Saturn,1
+What is 2 + 2?,3,4,5,6,1
+Who wrote "Romeo and Juliet"?,Dickens,Shakespeare,Austen,Hemingway,1
+What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0`;
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "quiz_template.csv";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    // === ADMIN ===
+    function subscribeAdminData() {
+      const u1 = onSnapshot(collection(db, USERS_COLLECTION), snap => {
+        allUsers = []; snap.forEach(d => allUsers.push({ id: d.id, ...d.data() })); renderAdminUsers();
+      });
+      const u2 = onSnapshot(query(collection(db, REQUESTS_COLLECTION), where("status", "==", "pending")), snap => {
+        adminRequestsList = []; snap.forEach(d => adminRequestsList.push({ id: d.id, ...d.data() })); renderAdminRequests();
+      });
+      const u3 = onSnapshot(collection(db, SCORES_COLLECTION), snap => {
+        allScores = []; snap.forEach(d => allScores.push({ id: d.id, ...d.data() })); renderAdminStats();
+      });
+      unsubs.push(u1, u2, u3);
+    }
+
+    function renderAdminUsers() {
+      if (!allUsers.length) { adminUsers.innerHTML = '<div class="lb-empty">No users yet</div>'; return; }
+      adminUsers.innerHTML = allUsers.map(u =>
+        `<div class="admin-user">
+          <div><strong>${escHtml(u.displayName || u.email || "?")}</strong><div class="email">${escHtml(u.email || "")} ${u.isAdmin ? '👑 Admin' : ''}</div></div>
+          <div class="actions">${u.isAdmin ? '' : `<button class="btn btn-sm btn-green make-admin-btn" data-uid="${u.id}">Make Admin</button>`}</div>
+        </div>`
+      ).join("");
+      document.querySelectorAll(".make-admin-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { isAdmin: true }); toastMsg("User promoted"); } catch (e) { toastMsg("Error"); }
+        });
+      });
+    }
+
+    function renderAdminRequests() {
+      if (!adminRequestsList.length) { adminRequests.innerHTML = '<div class="lb-empty">No pending requests</div>'; return; }
+      adminRequests.innerHTML = adminRequestsList.map(r =>
+        `<div class="admin-req">
+          <div><strong>${escHtml(r.displayName || r.email || "?")}</strong><div class="email">${escHtml(r.email || "")}</div></div>
+          <div class="actions">
+            <button class="btn btn-sm btn-green approve-btn" data-uid="${r.uid}">Approve</button>
+            <button class="btn btn-sm btn-red deny-btn" data-uid="${r.uid}">Deny</button>
+          </div>
+        </div>`
+      ).join("");
+      document.querySelectorAll(".approve-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { isAdmin: true }); await deleteDoc(doc(db, REQUESTS_COLLECTION, btn.dataset.uid)); toastMsg("Approved!"); } catch (e) { toastMsg("Error"); }
+        });
+      });
+      document.querySelectorAll(".deny-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          try { await deleteDoc(doc(db, REQUESTS_COLLECTION, btn.dataset.uid)); toastMsg("Denied"); } catch (e) { toastMsg("Error"); }
+        });
+      });
+    }
+
+    function renderAdminStats() {
+      if (!allScores.length) { adminStats.innerHTML = '<div class="lb-empty">No games played yet</div>'; return; }
+      const total = allScores.length;
+      const players = new Set(allScores.map(s => s.uid)).size;
+      const avgCorrect = Math.round(allScores.reduce((a, s) => a + (s.correct || 0), 0) / total);
+      const avgTotal = Math.round(allScores.reduce((a, s) => a + (s.total || 0), 0) / total);
+      const totalCorrect = allScores.reduce((a, s) => a + (s.correct || 0), 0);
+      adminStats.innerHTML = `<div style="display:flex;gap:20px;flex-wrap:wrap"><div><span style="color:#888">Sessions:</span> <strong>${total}</strong></div><div><span style="color:#888">Players:</span> <strong>${players}</strong></div><div><span style="color:#888">Total Correct:</span> <strong>${totalCorrect}</strong></div><div><span style="color:#888">Avg/Session:</span> <strong>${avgCorrect}✔️/${avgTotal}</strong></div></div>`;
+    }
+  </script>
+</body>
+</html>
