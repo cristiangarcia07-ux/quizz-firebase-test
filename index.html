@@ -389,6 +389,7 @@
         </div>
         <div class="editor-tabs">
           <button class="active" id="useDefaultTab">Default (20)</button>
+          <button id="useMixedTab">Mixed</button>
           <button id="useCustomTab">Custom</button>
         </div>
         <div id="customQuestions">
@@ -565,6 +566,7 @@
     const adminSignOut = document.getElementById("adminSignOut");
 
     const useDefaultTab = document.getElementById("useDefaultTab");
+    const useMixedTab = document.getElementById("useMixedTab");
     const useCustomTab = document.getElementById("useCustomTab");
     const questionCount = document.getElementById("questionCount");
     const questionsList = document.getElementById("questionsList");
@@ -598,7 +600,7 @@
     let userScores = [];
     let allScores = [];
     let unsubs = [];
-    let usingCustom = false;
+    let quizMode = "default"; // "default" | "custom" | "mixed"
     let customQuestions = [];
 
     // === DEFAULT QUESTIONS ===
@@ -965,13 +967,15 @@
         snap.forEach(d => customQuestions.push({ id: d.id, ...d.data() }));
       } catch (e) { console.log("No custom questions yet"); }
 
-      usingCustom = customQuestions.length > 0;
+      quizMode = customQuestions.length > 0 ? "mixed" : "default";
       updateEditorTabs();
       startQuiz();
     }
 
     function getActiveQuestions() {
-      return usingCustom && customQuestions.length > 0 ? customQuestions : DEFAULT_QUESTIONS;
+      if (quizMode === "custom" && customQuestions.length > 0) return customQuestions;
+      if (quizMode === "mixed") return [...DEFAULT_QUESTIONS, ...customQuestions];
+      return DEFAULT_QUESTIONS;
     }
 
     function startQuiz() {
@@ -1150,22 +1154,29 @@
 
     // === QUIZ EDITOR ===
     function updateEditorTabs() {
-      useDefaultTab.classList.toggle("active", !usingCustom);
-      useCustomTab.classList.toggle("active", usingCustom);
+      useDefaultTab.classList.toggle("active", quizMode === "default");
+      useMixedTab.classList.toggle("active", quizMode === "mixed");
+      useCustomTab.classList.toggle("active", quizMode === "custom");
       if (customQuestions.length > 0) {
         useCustomTab.textContent = `Custom (${customQuestions.length})`;
+        useMixedTab.textContent = `Mixed (20 + ${customQuestions.length})`;
       } else {
         useCustomTab.textContent = "Custom (0)";
+        useMixedTab.textContent = "Mixed (20 + 0)";
       }
     }
 
     useDefaultTab.addEventListener("click", () => {
-      if (usingCustom) { usingCustom = false; updateEditorTabs(); startQuiz(); toastMsg("Switched to default questions"); }
+      if (quizMode !== "default") { quizMode = "default"; updateEditorTabs(); startQuiz(); toastMsg("Switched to default questions"); }
+    });
+
+    useMixedTab.addEventListener("click", () => {
+      if (quizMode !== "mixed") { quizMode = "mixed"; updateEditorTabs(); startQuiz(); toastMsg("Switched to mixed questions"); }
     });
 
     useCustomTab.addEventListener("click", () => {
-      if (!usingCustom && customQuestions.length > 0) {
-        usingCustom = true; updateEditorTabs(); startQuiz(); toastMsg("Switched to custom questions");
+      if (quizMode !== "custom" && customQuestions.length > 0) {
+        quizMode = "custom"; updateEditorTabs(); startQuiz(); toastMsg("Switched to custom questions");
       } else if (customQuestions.length === 0) {
         toastMsg("No custom questions yet — add some!");
       }
@@ -1284,7 +1295,7 @@
         questionCount.textContent = `${customQuestions.length} custom question(s)`;
         renderEditor();
         toastMsg(isNew ? "Question added!" : "Question saved!");
-        if (usingCustom) startQuiz();
+        if (quizMode !== "default") startQuiz();
       } catch (e) { toastMsg("Save error: " + e.message); }
     }
 
@@ -1300,7 +1311,7 @@
         renderEditor();
         questionCount.textContent = `${customQuestions.length} custom question(s)`;
         toastMsg("Question deleted");
-        if (usingCustom) startQuiz();
+        if (quizMode !== "default") startQuiz();
       } catch (e) { toastMsg("Delete error: " + e.message); }
     }
 
@@ -1359,7 +1370,7 @@
       }
       renderEditor();
       updateEditorTabs();
-      if (usingCustom) startQuiz();
+      if (quizMode !== "default") startQuiz();
       const errMsg = errors.length ? `. Errors: ${errors.slice(0, 3).join("; ")}${errors.length > 3 ? ` (+${errors.length - 3} more)` : ""}` : "";
       csvStatus.textContent = `✅ Imported ${imported} question(s)${errMsg}`;
       if (imported > 0) csvInput.value = "";
@@ -1410,7 +1421,7 @@
       updateEditorTabs();
       questionCount.textContent = `0 questions`;
       toastMsg(`Deleted ${deleted} question(s)`);
-      if (usingCustom) startQuiz();
+      if (quizMode !== "default") startQuiz();
     });
 
     // === THEME ===
