@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <script src="https://js.puter.com/v2/"></script>
+
   <style>
     :root {
       --bg: #0a0a0a;
@@ -1755,23 +1755,23 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
       return cache[currentLang]?.[text] || text;
     }
 
-    const LANG_NAMES = { es:"Spanish", fr:"French", de:"German", pt:"Portuguese", it:"Italian", ja:"Japanese", ko:"Korean", zh:"Chinese", ru:"Russian", ar:"Arabic" };
-
     async function translateTexts(texts, target) {
       if (!texts.length || target === "en") return {};
       const results = {};
-      const langName = LANG_NAMES[target] || target;
       const chunkSize = 20;
       for (let i = 0; i < texts.length; i += chunkSize) {
         const chunk = texts.slice(i, i + chunkSize);
         try {
-          const prompt = `Translate these English phrases to ${langName}. Return ONLY a JSON array of translated strings in the same order. No markdown, no explanation.\n\n${chunk.map((t, j) => `[${j}] ${t}`).join('\n')}`;
-          const r = await puter.ai.chat(prompt);
-          let arr;
-          const m = r.match(/\[[\s\S]*?\]/);
-          if (m) arr = JSON.parse(m[0]); else arr = JSON.parse(r);
-          if (!Array.isArray(arr)) throw new Error("Not an array");
-          chunk.forEach((orig, j) => { results[orig] = arr[j] || orig; });
+          const q = chunk.join("\n");
+          const res = await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&dt=t&tl=" + target + "&q=" + encodeURIComponent(q));
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (!data[0]) continue;
+          data[0].forEach((entry, j) => {
+            if (j < chunk.length && entry[0]) {
+              results[chunk[j]] = entry[0].replace(/\n$/, "");
+            }
+          });
         } catch (e) { console.warn("Translation error:", e); }
       }
       return results;
