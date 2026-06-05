@@ -699,10 +699,10 @@
     // === AUTH ===
     authToggleLink.addEventListener("click", () => {
       isSigningUp = !isSigningUp;
-      authTitle.textContent = isSigningUp ? "Sign Up" : "Sign In";
-      authBtn.textContent = isSigningUp ? "Sign Up" : "Sign In";
-      authToggleText.textContent = isSigningUp ? "Already have an account?" : "Don't have an account?";
-      authToggleLink.textContent = isSigningUp ? "Sign In" : "Sign Up";
+      authTitle.textContent = isSigningUp ? t("Sign Up") : t("Sign In");
+      authBtn.textContent = isSigningUp ? t("Sign Up") : t("Sign In");
+      authToggleText.textContent = isSigningUp ? t("Already have an account?") : t("Don't have an account?");
+      authToggleLink.textContent = isSigningUp ? t("Sign In") : t("Sign Up");
       signupFields.style.display = isSigningUp ? "block" : "none";
       authError.textContent = "";
     });
@@ -715,18 +715,18 @@
       const email = authEmail.value.trim();
       const password = authPassword.value;
       authError.textContent = "";
-      if (!email || !password) { authError.textContent = "Email and password required"; return; }
-      if (password.length < 6) { authError.textContent = "Password must be 6+ characters"; return; }
+      if (!email || !password) { authError.textContent = t("Email and password required"); return; }
+      if (password.length < 6) { authError.textContent = t("Password must be 6+ characters"); return; }
       authBtn.disabled = true;
-      authBtn.textContent = "Loading...";
+      authBtn.textContent = t("Loading...");
       try {
         if (isSigningUp) {
           const displayName = authName.value.trim() || email.split("@")[0];
           const adminSecretVal = adminSecret.value.trim();
           if (adminCheck.checked && adminSecretVal !== ADMIN_SECRET) {
-            authError.textContent = "Invalid admin secret";
+            authError.textContent = t("Invalid admin secret");
             authBtn.disabled = false;
-            authBtn.textContent = "Sign Up";
+            authBtn.textContent = t("Sign Up");
             return;
           }
           const cred = await createUserWithEmailAndPassword(auth, email, password);
@@ -742,15 +742,15 @@
         }
       } catch (e) {
         const map = {
-          "auth/user-not-found": "No account with this email",
-          "auth/wrong-password": "Wrong password",
-          "auth/email-already-in-use": "Email already in use",
-          "auth/invalid-credential": "Invalid email or password",
+          "auth/user-not-found": t("No account with this email"),
+          "auth/wrong-password": t("Wrong password"),
+          "auth/email-already-in-use": t("Email already in use"),
+          "auth/invalid-credential": t("Invalid email or password"),
         };
         authError.textContent = map[e.code] || e.message;
       } finally {
         authBtn.disabled = false;
-        authBtn.textContent = isSigningUp ? "Sign Up" : "Sign In";
+        authBtn.textContent = isSigningUp ? t("Sign Up") : t("Sign In");
       }
     }
 
@@ -810,7 +810,7 @@
           customizeNav.style.display = "";
           toastMsg("You are now an admin!");
           adminReqStatus.textContent = t("Admin granted!");
-        } catch (e) { adminReqStatus.textContent = "Error: " + e.message; }
+        } catch (e) { adminReqStatus.textContent = t("Error:") + " " + e.message; }
         return;
       }
       try {
@@ -820,8 +820,7 @@
           status: "pending", createdAt: serverTimestamp(),
         });
         adminReqStatus.textContent = t("Request sent! Wait for an admin to approve.");
-        toastMsg("Admin request submitted");
-      } catch (e) { adminReqStatus.textContent = "Error: " + e.message; }
+      } catch (e) { adminReqStatus.textContent = t("Error:") + " " + e.message; }
     });
 
     // === AUTH STATE ===
@@ -971,11 +970,11 @@
     }
 
     function renderAccount() {
-      const name = userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split("@")[0] || "User";
+      const name = userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split("@")[0] || t("User");
       accountName.textContent = name;
       accountEmail.textContent = currentUser?.email || "—";
       setAvatar(currentUser?.email, name);
-      accountBadge.innerHTML = isAdmin ? '<span class="badge">Admin</span>' : '<span style="font-size:0.75rem;color:#666">User</span>';
+      accountBadge.innerHTML = isAdmin ? `<span class="badge">${t("Admin")}</span>` : `<span style="font-size:0.75rem;color:#666">${t("User")}</span>`;
       reqAdminCheck.checked = false;
       reqAdminSection.style.display = "none";
       reqAdminSecret.value = "";
@@ -1059,7 +1058,7 @@
       accuracyPct.textContent = quizTotal > 0 ? `${pct}%` : '—';
 
       let html = `<div class="question-card">`;
-      html += `<div class="q-number">Question ${quizTotal + 1}</div>`;
+      html += `<div class="q-number">${t("Question")} ${quizTotal + 1}</div>`;
       if (q.cat) html += `<div class="category-badge">📂 ${escHtml(q.cat)}</div>`;
       html += `<div class="q-text">${escHtml(q.q)}</div>`;
       html += `<div class="options">`;
@@ -1166,7 +1165,7 @@
         });
         topScores = Object.values(best).sort((a, b) => b.correct - a.correct || (b.accuracy || 0) - (a.accuracy || 0)).slice(0, 20);
         renderLeaderboard();
-      }, () => { lbEl.innerHTML = '<div class="lb-empty">DB error — enable Firestore</div>'; });
+      }, () => { lbEl.innerHTML = `<div class="lb-empty">${t("DB error — enable Firestore")}</div>`; });
       unsubs.push(unsub);
     }
 
@@ -1192,14 +1191,14 @@
         snap.forEach(d => userScores.push({ id: d.id, ...d.data() }));
         userScores = userScores.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)).slice(0, 10);
         myScores.innerHTML = userScores.length
-          ? userScores.map((s, i) => `<div class="lb-entry" style="font-size:0.8rem"><span class="rank">#${i+1}</span><span class="name">${s.correct || 0}✔️/${s.total || 0} · ${s.accuracy || 0}% · streak ${s.streak || 0}</span><span class="time" style="color:#666;font-size:0.75rem">${s.createdAt?.toDate?.()?.toLocaleDateString() || ''}</span></div>`).join("")
-          : '<div class="lb-empty">No scores yet</div>';
+          ? userScores.map((s, i) => `<div class="lb-entry" style="font-size:0.8rem"><span class="rank">#${i+1}</span><span class="name">${s.correct || 0}✔️/${s.total || 0} · ${s.accuracy || 0}% · ${t("streak")} ${s.streak || 0}</span><span class="time" style="color:#666;font-size:0.75rem">${s.createdAt?.toDate?.()?.toLocaleDateString() || ''}</span></div>`).join("")
+          : `<div class="lb-empty">${t("No scores yet")}</div>`;
         myScores.style.display = "block";
       } catch (e) { toastMsg("Error loading scores"); }
     });
 
     clearBtn.addEventListener("click", async () => {
-      if (!currentUser || !confirm("Clear all your scores?")) return;
+      if (!currentUser || !confirm(t("Clear all your scores?"))) return;
       try {
         const q = query(collection(db, SCORES_COLLECTION), where("uid", "==", currentUser.uid));
         const snap = await getDocs(q);
@@ -1215,11 +1214,11 @@
       useMixedTab.classList.toggle("active", quizMode === "mixed");
       useCustomTab.classList.toggle("active", quizMode === "custom");
       if (customQuestions.length > 0) {
-        useCustomTab.textContent = `Custom (${customQuestions.length})`;
-        useMixedTab.textContent = `Mixed (20 + ${customQuestions.length})`;
+        useCustomTab.textContent = `${t("Custom")} (${customQuestions.length})`;
+        useMixedTab.textContent = `${t("Mixed")} (20 + ${customQuestions.length})`;
       } else {
-        useCustomTab.textContent = "Custom (0)";
-        useMixedTab.textContent = "Mixed (20 + 0)";
+        useCustomTab.textContent = `${t("Custom")} (0)`;
+        useMixedTab.textContent = `${t("Mixed")} (20 + 0)`;
       }
     }
 
@@ -1257,14 +1256,15 @@
     }
 
     function renderEditor() {
-      if (!currentUser) { questionsList.innerHTML = '<div class="lb-empty">Sign in to edit questions</div>'; return; }
+      if (!currentUser) { questionsList.innerHTML = `<div class="lb-empty">${t("Sign in to edit questions")}</div>`; return; }
       const filtered = getFilteredQuestions();
       const showing = searchTerm ? ` (showing ${filtered.length})` : "";
-      questionCount.textContent = `${customQuestions.length} custom question${customQuestions.length !== 1 ? 's' : ''}${showing}`;
+      const qLabel = customQuestions.length === 1 ? t("custom question") : t("custom questions");
+      questionCount.textContent = `${customQuestions.length} ${qLabel}${showing}`;
       if (!filtered.length) {
         questionsList.innerHTML = searchTerm
-          ? '<div class="lb-empty">No questions match your search</div>'
-          : '<div class="lb-empty">No custom questions yet. Add some above!</div>';
+          ? `<div class="lb-empty">${t("No questions match your search")}</div>`
+          : `<div class="lb-empty">${t("No custom questions yet. Add some above!")}</div>`;
         return;
       }
       questionsList.innerHTML = filtered.map((q, i) => {
@@ -1299,7 +1299,7 @@
       form.id = "editForm";
       form.className = "editor-card";
       form.innerHTML = `
-        <h3>${isNew ? "Add Question" : "Edit Question"}</h3>
+        <h3>${isNew ? t("Add Question") : t("Edit Question")}</h3>
         <div class="inline-form">
           <div>
             <label>Question</label>
@@ -1314,18 +1314,18 @@
           </div>
           ${q.opts.map((opt, i) => `
             <div>
-              <label>Option ${i + 1}</label>
+              <label>${t("Option")} ${i + 1}</label>
               <div class="opt-row">
-                <input class="eq-opt" data-idx="${i}" value="${escHtml(opt)}" placeholder="Option ${i + 1}">
+                <input class="eq-opt" data-idx="${i}" value="${escHtml(opt)}" placeholder="${t("Option")} ${i + 1}">
                 <label style="display:flex;align-items:center;gap:4px;white-space:nowrap;font-size:0.75rem;flex-shrink:0">
-                  <input type="radio" name="eqCorrect" class="opt-correct" value="${i}" ${i === q.ans ? "checked" : ""}> correct
+                  <input type="radio" name="eqCorrect" class="opt-correct" value="${i}" ${i === q.ans ? "checked" : ""}> ${t("correct")}
                 </label>
               </div>
             </div>
           `).join("")}
           <div class="flex">
-            <button class="btn btn-yellow btn-sm" id="saveQuestionBtn">${isNew ? "Add" : "Save"}</button>
-            <button class="btn btn-outline btn-sm" id="cancelEditBtn">Cancel</button>
+            <button class="btn btn-yellow btn-sm" id="saveQuestionBtn">${isNew ? t("Add") : t("Save")}</button>
+            <button class="btn btn-outline btn-sm" id="cancelEditBtn">${t("Cancel")}</button>
           </div>
         </div>
       `;
@@ -1358,7 +1358,8 @@
         }
         document.getElementById("editForm")?.remove();
         editingIdx = -1;
-        questionCount.textContent = `${customQuestions.length} custom question(s)`;
+        const qLabel2 = customQuestions.length === 1 ? t("custom question") : t("custom questions");
+        questionCount.textContent = `${customQuestions.length} ${qLabel2}`;
         renderEditor();
         toastMsg(isNew ? "Question added!" : "Question saved!");
         if (quizMode !== "default") startQuiz();
@@ -1375,7 +1376,8 @@
         await deleteDoc(doc(db, QUESTIONS_COLLECTION, q.id));
         customQuestions.splice(idx, 1);
         renderEditor();
-        questionCount.textContent = `${customQuestions.length} custom question(s)`;
+        const qLabel3 = customQuestions.length === 1 ? t("custom question") : t("custom questions");
+        questionCount.textContent = `${customQuestions.length} ${qLabel3}`;
         toastMsg("Question deleted");
         if (quizMode !== "default") startQuiz();
       } catch (e) { toastMsg("Delete error: " + e.message); }
@@ -1423,10 +1425,11 @@
 
     importCsvBtn.addEventListener("click", async () => {
       const text = csvInput.value.trim();
-      if (!text) { csvStatus.textContent = "Paste some CSV first!"; return; }
+      if (!text) { csvStatus.textContent = t("Paste CSV first!"); return; }
       const { questions, errors } = parseCSV(text);
-      if (!questions.length) { csvStatus.textContent = "No valid questions found. " + errors.join("; "); return; }
-      csvStatus.textContent = `Importing ${questions.length} question(s)...`;
+      if (!questions.length) { csvStatus.textContent = t("No valid questions found.") + " " + errors.join("; "); return; }
+      const ql = questions.length === 1 ? t("question") : t("questions");
+      csvStatus.textContent = `${t("Importing")} ${questions.length} ${ql}...`;
       let imported = 0;
       for (const q of questions) {
         try {
@@ -1438,8 +1441,9 @@
       renderEditor();
       updateEditorTabs();
       if (quizMode !== "default") startQuiz();
-      const errMsg = errors.length ? `. Errors: ${errors.slice(0, 3).join("; ")}${errors.length > 3 ? ` (+${errors.length - 3} more)` : ""}` : "";
-      csvStatus.textContent = `✅ Imported ${imported} question(s)${errMsg}`;
+      const errMsg = errors.length ? `. ${t("Errors:")} ${errors.slice(0, 3).join("; ")}${errors.length > 3 ? ` (+${errors.length - 3} ${t("more")})` : ""}` : "";
+      const ql2 = imported === 1 ? t("question") : t("questions");
+      csvStatus.textContent = `${t("Imported")} ${imported} ${ql2}${errMsg}`;
       if (imported > 0) csvInput.value = "";
     });
 
@@ -1449,7 +1453,7 @@
       const reader = new FileReader();
       reader.onload = (ev) => {
         csvInput.value = ev.target.result;
-        csvStatus.textContent = `Loaded "${file.name}" (${(file.size / 1024).toFixed(1)} KB)`;
+        csvStatus.textContent = `${t("Loaded")} "${file.name}" (${(file.size / 1024).toFixed(1)} KB)`;
       };
       reader.readAsText(file);
     });
@@ -1507,20 +1511,20 @@
     // === BAN APPEAL ===
     submitAppealBtn.addEventListener("click", async () => {
       const msg = appealMessage.value.trim();
-      if (!msg) { appealStatus.textContent = "Write a message first."; return; }
+      if (!msg) { appealStatus.textContent = t("Write a message first."); return; }
       if (!currentUser) return;
-      appealStatus.textContent = "Submitting...";
+      appealStatus.textContent = t("Submitting...");
       try {
         const existingSnap = await getDocs(query(collection(db, APPEALS_COLLECTION), where("uid", "==", currentUser.uid), where("status", "==", "pending")));
-        if (!existingSnap.empty) { appealStatus.textContent = "You already have a pending appeal."; return; }
+        if (!existingSnap.empty) { appealStatus.textContent = t("You already have a pending appeal."); return; }
         await addDoc(collection(db, APPEALS_COLLECTION), {
           uid: currentUser.uid, email: currentUser.email,
-          name: currentUser.displayName || currentUser.email?.split("@")[0] || "User",
+          name: currentUser.displayName || currentUser.email?.split("@")[0] || t("User"),
           message: msg, status: "pending", createdAt: Timestamp.now()
         });
-        appealStatus.textContent = "✅ Appeal submitted. An admin will review it.";
+        appealStatus.textContent = t("✅ Appeal submitted. An admin will review it.");
         submitAppealBtn.disabled = true;
-      } catch (e) { appealStatus.textContent = "Error: " + e.message; }
+      } catch (e) { appealStatus.textContent = t("Error:") + " " + e.message; }
     });
 
     // === CSV TEMPLATE ===
@@ -1795,7 +1799,7 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
       let node;
       while (node = walker.nextNode()) {
         const parent = node.parentElement;
-        if (!parent || parent.closest("script,style,textarea,input,select,option,.lang-bar,#csvInput,#appealMessage,.frog-speech,.frog-area")) continue;
+        if (!parent || parent.closest("script,style,textarea,input,select,option,.lang-bar,#csvInput,#appealMessage")) continue;
         const text = node.textContent.trim();
         if (text.length > 1) cb(node, text);
       }
@@ -1834,16 +1838,14 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
     function updateFrogSpeech() {
       const el = document.getElementById("frogSpeech");
       if (!el) return;
-      const texts = [
-        ["ready to", "quiz"], ["infinite mode —", "go!"], ["aww,", "wrong!"],
-        ["keep", "practicing!"], ["solid run!"], ["not bad!"], ["AMAZING RUN!"],
-        ["correct!"], ["streak!"]
-      ];
-      const html = el.innerHTML;
-      const words = html.replace(/<[^>]*>/g, "").trim();
       const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
-      if (cache[currentLang]?.[words]) {
-        el.innerHTML = html.replace(words, () => cache[currentLang][words]);
+      const map = cache[currentLang];
+      if (!map) return;
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+      let node;
+      while (node = walker.nextNode()) {
+        const text = node.textContent.trim();
+        if (text && map[text]) node.textContent = node.textContent.replace(text, map[text]);
       }
     }
 
@@ -1865,18 +1867,22 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
       "Email and password required","Password must be 6+ characters","Invalid admin secret",
       "No account with this email","Wrong password","Email already in use","Invalid email or password",
       "(you)","Clear all your scores?","Revoke admin from this user?","Ban this user?",
-      "Unsuspend this user?","No","Yes","Show All","Next →","Play Again","Best streak:","questions",
+      "Unsuspend this user?","No","Yes","Show All","Next →","Play Again","Best streak:",
       "anon","Admin","Banned","Expired","Revoke","Make Admin","Unban","Ban","Unsuspend","Suspend","Delete",
       "h left","Suspend User","Suspension ends at (date & time)","Cancel","Approve","Deny",
       "Reason for denial (optional):","No pending appeals","No pending requests","No games played yet",
-      "Sessions:","Players:","Total Correct:","Avg/Session:","Paste CSV first!",
+      "Sessions:","Players:","Total Correct:","Avg/Session:",
       "🚫 Account Banned","You already have a pending appeal. Wait for a response.","❌ Your appeal was denied.",
       "Response:","Submit New Appeal","Submit Appeal","Delete ALL","custom questions? This cannot be undone.",
       "Delete:","Admin granted!","Request sent! Wait for an admin to approve.","User",
       "I want admin access","Admin Secret (leave blank to request)","Admin secret or leave blank",
       "GitHub sign-in failed: ","Sign Out","Toggle theme","Question","Correct","Accuracy","Streak",
       "No questions match the selected categories","Show All","Don't have an account?",
-      "Already have an account?","Sign In","Sign Up",
+      "Already have an account?","Sign In","Sign Up","Loading...","ready to ","quiz","!",
+      "correct!","wrong!","aww, ","keep ","practicing!","solid run!","not bad!","AMAZING RUN!",
+      "Paste CSV first!","No valid questions found.","Importing","Imported","Loaded","question","questions",
+      "custom question","custom questions","Option","Add","Save","Add Question","Edit Question",
+      "Custom","Mixed","Submitting...","✅ Appeal submitted. An admin will review it.","Errors:","more","Error:",
     ];
 
     async function setLanguage(lang) {
