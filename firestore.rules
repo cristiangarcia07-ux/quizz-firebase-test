@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if the requester is an admin
+    function isAdmin() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/quiz_users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // Helper: check if the requester owns the given uid
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // ===== quiz_users =====
+    match /quiz_users/{uid} {
+      // Anyone can create their own user doc on sign-up
+      allow create: if isOwner(uid);
+      // Users can read their own doc; admins can read all
+      allow read: if isOwner(uid) || isAdmin();
+      // Users can update their own doc (but NOT escalate to admin);
+      // admins can update any doc (ban, suspend, promote, etc.)
+      allow update: if (isOwner(uid) && !request.resource.data.keys().hasAny(['isAdmin']))
+                    || isAdmin();
+      // Only admins can delete user docs
+      allow delete: if isAdmin();
+    }
+
+    // ===== quiz_scores =====
+    match /quiz_scores/{docId} {
+      // Anyone can read scores (leaderboard is public)
+      allow read: if true;
+      // Users can submit their own scores
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid;
+      // Users can delete their own scores; admins can delete any
+      allow delete: if isOwner(get(/databases/$(database)/documents/quiz_scores/$(docId)).data.uid)
+                    || isAdmin();
+      // No direct update — scores are write-once
+      allow update: if false;
+    }
+
+    // ===== admin_requests =====
+    match /admin_requests/{uid} {
+      // Users can create a request for their own uid only
+      allow create: if isOwner(uid)
+                    && request.resource.data.status == 'pending';
+      // Users can read their own request; admins can read all
+      allow read: if isOwner(uid) || isAdmin();
+      // Admins can delete (approve/deny); no updates needed
+      allow delete: if isAdmin();
+      allow update: if false;
+    }
+
+    // ===== quiz_questions =====
+    match /quiz_questions/{docId} {
+      // Anyone can read questions (needed to play the quiz)
+      allow read: if true;
+      // Only admins can create, update, or delete questions
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ===== ban_appeals =====
+    match /ban_appeals/{docId} {
+      // Users can create an appeal (must set their own uid and status="pending")
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.status == 'pending';
+      // Users can read their own appeals; admins can read all
+      allow read: if isOwner(get(/databases/$(database)/documents/ban_appeals/$(docId)).data.uid)
+                    || isAdmin();
+      // Admins can update appeals (approve/deny with response)
+      allow update: if isAdmin();
+      // No deletion
+      allow delete: if false;
+    }
+
+  }
+}
