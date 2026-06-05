@@ -1179,10 +1179,11 @@
       if (!currentUser) return;
       if (myScores.style.display !== "none") { myScores.style.display = "none"; return; }
       try {
-        const q = query(collection(db, SCORES_COLLECTION), where("uid", "==", currentUser.uid), orderBy("createdAt", "desc"), limit(10));
+        const q = query(collection(db, SCORES_COLLECTION), where("uid", "==", currentUser.uid));
         const snap = await getDocs(q);
         userScores = [];
         snap.forEach(d => userScores.push({ id: d.id, ...d.data() }));
+        userScores = userScores.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)).slice(0, 10);
         myScores.innerHTML = userScores.length
           ? userScores.map((s, i) => `<div class="lb-entry" style="font-size:0.8rem"><span class="rank">#${i+1}</span><span class="name">${s.correct || 0}✔️/${s.total || 0} · ${s.accuracy || 0}% · streak ${s.streak || 0}</span><span class="time" style="color:#666;font-size:0.75rem">${s.createdAt?.toDate?.()?.toLocaleDateString() || ''}</span></div>`).join("")
           : '<div class="lb-empty">No scores yet</div>';
