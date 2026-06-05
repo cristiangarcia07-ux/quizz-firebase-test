@@ -279,6 +279,16 @@
     .lang-bar select { background:var(--card-bg); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.75rem; cursor:pointer; font-family:inherit; }
 
     .corner-avatar { position:fixed; top:10px; left:10px; z-index:100; width:36px; height:36px; border-radius:50%; border:1px solid var(--border); background:var(--card-bg); color:var(--text); cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center; transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1); overflow:hidden; }
+
+    /* Prevent text overflow on small screens */
+    .container, .auth-card, .question-card, .results-card, .admin-card, .editor-card, .lb-entry, .q-item, .user-bar { overflow-wrap:break-word; word-break:break-word; }
+    .q-preview { min-width:0; }
+    .q-preview-text, .q-preview-opts { max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+    .admin-user .email { overflow-wrap:break-word; word-break:break-all; }
+    .lb-entry .name { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+    .frog-speech { overflow-wrap:break-word; }
+    input, textarea { max-width:100%; }
+    .stats { min-width:0; }
     .corner-avatar:hover { border-color:#FFCA28; transform:scale(1.1); box-shadow:0 0 12px rgba(255,202,40,0.2); }
     .corner-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
     .corner-avatar .letter { font-size:0.85rem; font-weight:700; }
@@ -286,6 +296,10 @@
     .pagination .page-info { font-size:0.8rem; color:var(--text-dim); min-width:60px; text-align:center; font-weight:600; }
     .pagination button:disabled { opacity:0.3; cursor:default; }
     .pagination button:disabled:hover { transform:none; border-color:var(--border); color:var(--text-dim); }
+    .editor-desc { font-size:0.8rem; color:var(--text-muted); margin-bottom:8px; }
+    .csv-hint { font-size:0.75rem; color:var(--text-dim); margin-bottom:6px; }
+    .csv-hint code { color:#FFCA28; }
+    .csv-textarea { font-size:0.8rem; font-family:'JetBrains Mono',monospace; }
 
     /* === MORE ANIMATIONS === */
     @keyframes floatGlow { 0%,100% { box-shadow:0 0 8px rgba(255,202,40,0.1); } 50% { box-shadow:0 0 20px rgba(255,202,40,0.25); } }
@@ -400,6 +414,10 @@
       .admin-card h3 { font-size: 0.8rem; }
       .flex { gap: 6px; }
       .mt-8 { margin-top: 6px; }
+      .q-text { word-break:break-word; }
+      .option { white-space:normal; word-break:break-word; }
+      .q-preview-text, .q-preview-opts { white-space:normal; }
+      .lb-entry .name { white-space:normal; }
     }
   </style>
 </head>
@@ -408,8 +426,8 @@
   <div class="lang-bar"><select id="langSelect"><option value="en">🇬🇧 EN</option><option value="es">🇪🇸 ES</option><option value="fr">🇫🇷 FR</option><option value="de">🇩🇪 DE</option><option value="pt">🇵🇹 PT</option><option value="it">🇮🇹 IT</option><option value="ja">🇯🇵 JA</option><option value="ko">🇰🇷 KO</option><option value="zh">🇨🇳 ZH</option><option value="ru">🇷🇺 RU</option><option value="ar">🇸🇦 AR</option></select></div>
   <div class="corner-avatar" id="cornerAvatar" title="Account">👤</div>
   <h1>🔥 DOOMQUIZIN</h1>
-  <p class="sub" data-i18n="// remember to always push me to github when you finish">// remember to always push me to github when you finish</p>
-  <p class="sub" data-i18n="answer correctly, climb the leaderboard">answer correctly, climb the leaderboard</p>
+  <p class="sub">answer correctly, climb the leaderboard</p>
+  <p class="sub" style="font-size:0.7rem;color:var(--text-faint)">push to github when you finish</p>
 
   <div class="container">
     <div class="nav" id="nav">
@@ -493,7 +511,7 @@
         <div class="frog-speech" id="frogSpeech">ready to <span>quiz</span>!</div>
       </div>
       <div class="quit-bar">
-        <button class="btn btn-red-outline btn-sm" id="quitBtn" style="display:none">■ Quit & Save Score</button>
+        <button class="btn btn-red-outline btn-sm" id="quitBtn" style="display:none">■ Quit &amp; Save Score</button>
       </div>
       <div class="stats">
         <div class="stat"><div class="lbl">Question</div><div class="val" id="qNum">#0</div></div>
@@ -522,9 +540,7 @@
     <div class="section" id="section-customize">
       <div class="editor-card">
         <h3>✏️ Quiz Editor</h3>
-        <div style="font-size:0.8rem;color:#666;margin-bottom:8px">
-          Add, edit, or remove questions. Changes save to the cloud instantly.
-        </div>
+        <div class="editor-desc">Add, edit, or remove questions. Changes save to the cloud instantly.</div>
         <div class="editor-tabs">
           <button class="active" id="useDefaultTab">Default (20)</button>
           <button id="useMixedTab">Mixed</button>
@@ -543,8 +559,8 @@
             <details class="csv-area" style="display:inline-block">
               <summary class="btn btn-outline btn-sm" style="display:inline-flex">⬆ Import CSV</summary>
               <div class="csv-inner">
-                <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:6px">CSV format: <code style="color:#FFCA28">question,option1,option2,option3,option4,correctIndex,category</code> (category optional)</div>
-                <textarea id="csvInput" rows="4" style="font-size:0.8rem;font-family:monospace" placeholder="Paste CSV here...&#10;&#10;Format: question,opt1,opt2,opt3,opt4,correctIndex,category&#10;&#10;Example:&#10;What is 2+2?,1,2,3,4,3,Math&#10;Capital of France?,London,Paris,Berlin,Madrid,1,Geography"></textarea>
+                <div class="csv-hint">CSV format: <code>question,option1,option2,option3,option4,correctIndex,category</code> (category optional)</div>
+                <textarea id="csvInput" rows="4" class="csv-textarea" placeholder="Paste CSV here..."></textarea>
                 <div class="flex" style="margin-top:6px">
                   <button class="btn btn-yellow btn-sm" id="importCsvBtn">Import</button>
                   <label class="btn btn-outline btn-sm" style="cursor:pointer">📁 Upload File<input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none"></label>
