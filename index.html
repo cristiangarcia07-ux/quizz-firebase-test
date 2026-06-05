@@ -1789,6 +1789,8 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
       const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
       let node;
       while (node = walker.nextNode()) {
+        const parent = node.parentElement;
+        if (!parent || parent.closest(".lang-bar,#gameArea")) continue;
         const text = node.textContent.trim();
         if (text && map[text]) node.textContent = node.textContent.replace(text, map[text]);
       }
@@ -1799,7 +1801,7 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
       let node;
       while (node = walker.nextNode()) {
         const parent = node.parentElement;
-        if (!parent || parent.closest("script,style,textarea,input,select,option,.lang-bar,#csvInput,#appealMessage")) continue;
+        if (!parent || parent.closest("script,style,textarea,input,select,option,.lang-bar,#csvInput,#appealMessage,#gameArea")) continue;
         const text = node.textContent.trim();
         if (text.length > 1) cb(node, text);
       }
