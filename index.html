@@ -430,12 +430,11 @@
   <p class="sub" style="font-size:0.7rem;color:var(--text-faint)">push to github when you finish</p>
 
   <div class="container">
-    <div class="nav" id="nav">
-      <a data-section="quiz" class="active">Quiz</a>
-      <a data-section="leaderboard">Leaderboard</a>
-      <a data-section="customize" id="customizeNav" style="display:none">Customize</a>
-      <a data-section="admin" id="adminNav" style="display:none">Admin</a>
-      <a data-section="account">Account</a>
+    <div class="nav" id="nav" style="display:none">
+      <a data-section="quiz" class="active" data-auth>Quiz</a>
+      <a data-section="leaderboard" data-auth>Leaderboard</a>
+      <a data-section="customize" id="customizeNav" style="display:none" data-auth>Customize</a>
+      <a data-section="admin" id="adminNav" style="display:none" data-auth>Admin</a>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -831,6 +830,7 @@
     navLinks.forEach(a => {
       a.addEventListener("click", () => {
         const section = a.dataset.section;
+        if (!currentUser && a.dataset.auth) { showSection("auth"); return; }
         if (section === "admin" && (!currentUser || !isAdmin)) return;
         if (section === "customize" && (!currentUser || !isAdmin)) { toastMsg("Admins only"); return; }
         if (section !== "auth") showSection(section);
@@ -838,7 +838,7 @@
       });
     });
 
-    cornerAvatar.addEventListener("click", () => showSection("account"));
+    cornerAvatar.addEventListener("click", () => showSection(currentUser ? "account" : "auth"));
 
     // === AUTH ===
     authToggleLink.addEventListener("click", () => {
@@ -1054,6 +1054,7 @@
         document.getElementById("authLoader").style.display = "none";
         document.getElementById("appealArea").style.display = "none";
         submitAppealBtn.disabled = false;
+        document.getElementById("nav").style.display = "";
         showSection("quiz");
         adminNav.style.display = isAdmin ? "" : "none";
         customizeNav.style.display = isAdmin ? "" : "none";
@@ -1065,6 +1066,7 @@
         currentUser = null; isAdmin = false; userProfile = null;
         document.getElementById("authFields").style.display = "";
         document.getElementById("authLoader").style.display = "none";
+        document.getElementById("nav").style.display = "none";
         showSection("auth");
         adminNav.style.display = "none";
         customizeNav.style.display = "none";
