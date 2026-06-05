@@ -1762,22 +1762,22 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
     async function translateTexts(texts, target) {
       if (!texts.length || target === "en") return {};
       const results = {};
-      const chunkSize = 20;
-      for (let i = 0; i < texts.length; i += chunkSize) {
-        const chunk = texts.slice(i, i + chunkSize);
+      const chunkSize = 15;
+      const chunks = [];
+      for (let i = 0; i < texts.length; i += chunkSize) chunks.push(texts.slice(i, i + chunkSize));
+      const workers = chunks.map(async chunk => {
         try {
           const q = chunk.join("\n");
           const res = await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&dt=t&tl=" + target + "&q=" + encodeURIComponent(q));
-          if (!res.ok) continue;
+          if (!res.ok) return;
           const data = await res.json();
-          if (!data[0]) continue;
+          if (!data[0]) return;
           data[0].forEach((entry, j) => {
-            if (j < chunk.length && entry[0]) {
-              results[chunk[j]] = entry[0].replace(/\n$/, "");
-            }
+            if (j < chunk.length && entry[0]) results[chunk[j]] = entry[0].replace(/\n$/, "");
           });
         } catch (e) { console.warn("Translation error:", e); }
-      }
+      });
+      await Promise.all(workers);
       return results;
     }
 
@@ -1789,8 +1789,6 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
       const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
       let node;
       while (node = walker.nextNode()) {
-        const parent = node.parentElement;
-        if (!parent || parent.closest(".lang-bar,#gameArea")) continue;
         const text = node.textContent.trim();
         if (text && map[text]) node.textContent = node.textContent.replace(text, map[text]);
       }
@@ -1801,7 +1799,7 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
       let node;
       while (node = walker.nextNode()) {
         const parent = node.parentElement;
-        if (!parent || parent.closest("script,style,textarea,input,select,option,.lang-bar,#csvInput,#appealMessage,#gameArea")) continue;
+        if (!parent || parent.closest("script,style,textarea,input,select,option,.lang-bar,#csvInput,#appealMessage")) continue;
         const text = node.textContent.trim();
         if (text.length > 1) cb(node, text);
       }
@@ -1892,21 +1890,26 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
       currentLang = lang;
       localStorage.setItem(LANG_KEY, lang);
       document.documentElement.lang = lang;
-      document.getElementById("langSelect").value = lang;
+      const sel = document.getElementById("langSelect");
+      sel.value = lang;
       if (lang === "en") { location.reload(); return; }
+      sel.style.opacity = "0.5";
       const domStrings = collectStrings(document.body);
       const allStrings = [...new Set([...domStrings, ...TOAST_STRINGS])];
       await applyTranslation(lang, allStrings);
       updateFrogSpeech();
+      sel.style.opacity = "1";
     }
 
     document.getElementById("langSelect")?.addEventListener("change", e => setLanguage(e.target.value));
     document.addEventListener("DOMContentLoaded", () => {
-      const saved = localStorage.getItem(LANG_KEY) || "en";
-      if (saved !== "en") {
-        document.getElementById("langSelect").value = saved;
-        setTimeout(() => setLanguage(saved), 500);
-      }
+      setTimeout(() => {
+        const saved = localStorage.getItem(LANG_KEY) || "en";
+        if (saved !== "en") {
+          document.getElementById("langSelect").value = saved;
+          setLanguage(saved);
+        }
+      }, 800);
     });
 
   </script>
