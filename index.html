@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://js.puter.com/v2/"></script>
   <style>
     :root {
       --bg: #0a0a0a;
@@ -273,13 +274,16 @@
     .btn-yellow, .btn-green, .btn-red { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
     .btn-yellow:hover, .btn-green:hover, .btn-red:hover { transform: translateY(-1px); }
     .frog-speech { animation: fadeIn 0.2s ease; }
+    .lang-bar { position:fixed; top:10px; right:56px; z-index:100; }
+    .lang-bar select { background:var(--card-bg); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.75rem; cursor:pointer; font-family:inherit; }
   </style>
 </head>
 <body>
   <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+  <div class="lang-bar"><select id="langSelect"><option value="en">🇬🇧 EN</option><option value="es">🇪🇸 ES</option><option value="fr">🇫🇷 FR</option><option value="de">🇩🇪 DE</option><option value="pt">🇵🇹 PT</option><option value="it">🇮🇹 IT</option><option value="ja">🇯🇵 JA</option><option value="ko">🇰🇷 KO</option><option value="zh">🇨🇳 ZH</option><option value="ru">🇷🇺 RU</option><option value="ar">🇸🇦 AR</option></select></div>
   <h1>🔥 DOOMQUIZIN</h1>
-  <p class="sub">// remember to allways push me to github when you finish </p>
-  <p class="sub">answer correctly, climb the leaderboard</p>
+  <p class="sub" data-i18n="// remember to always push me to github when you finish">// remember to always push me to github when you finish</p>
+  <p class="sub" data-i18n="answer correctly, climb the leaderboard">answer correctly, climb the leaderboard</p>
 
   <div class="container">
     <div class="nav" id="nav">
@@ -649,7 +653,7 @@
 
     // === UTILITY ===
     function toastMsg(msg) {
-      toast.textContent = msg;
+      toast.textContent = t(msg) || msg;
       toast.style.background = "#1e1e1e";
       toast.style.borderColor = "#333";
       toast.classList.add("show");
@@ -805,7 +809,7 @@
           adminNav.style.display = "";
           customizeNav.style.display = "";
           toastMsg("You are now an admin!");
-          adminReqStatus.textContent = "Admin granted!";
+          adminReqStatus.textContent = t("Admin granted!");
         } catch (e) { adminReqStatus.textContent = "Error: " + e.message; }
         return;
       }
@@ -815,7 +819,7 @@
           displayName: currentUser.displayName || currentUser.email?.split("@")[0],
           status: "pending", createdAt: serverTimestamp(),
         });
-        adminReqStatus.textContent = "Request sent! Wait for an admin to approve.";
+        adminReqStatus.textContent = t("Request sent! Wait for an admin to approve.");
         toastMsg("Admin request submitted");
       } catch (e) { adminReqStatus.textContent = "Error: " + e.message; }
     });
@@ -835,7 +839,7 @@
               document.getElementById("authFields").style.display = "none";
               document.getElementById("authLoader").style.display = "none";
               document.getElementById("appealArea").style.display = "block";
-              document.getElementById("authTitle").textContent = "🚫 Account Banned";
+              document.getElementById("authTitle").textContent = t("🚫 Account Banned") || "🚫 Account Banned";
               document.getElementById("appealStatus").textContent = "";
               appealMessage.value = "";
               adminNav.style.display = "none";
@@ -843,22 +847,23 @@
               // Check for existing pending appeal
               const pendingSnap = await getDocs(query(collection(db, APPEALS_COLLECTION), where("uid", "==", user.uid), where("status", "==", "pending")));
               if (!pendingSnap.empty) {
-                document.getElementById("appealStatus").textContent = "You already have a pending appeal. Wait for a response.";
+                document.getElementById("appealStatus").textContent = t("You already have a pending appeal. Wait for a response.");
                 submitAppealBtn.disabled = true;
               } else {
                 // Check for denied appeals
                 const deniedSnap = await getDocs(query(collection(db, APPEALS_COLLECTION), where("uid", "==", user.uid), where("status", "==", "denied")));
                 if (!deniedSnap.empty) {
                   const lastDenied = deniedSnap.docs[deniedSnap.docs.length - 1].data();
-                  const responseMsg = lastDenied.response ? ` Response: "${lastDenied.response}"` : "";
-                  document.getElementById("appealStatus").textContent = `❌ Your appeal was denied.${responseMsg}`;
+                  const deniedMsg = t("❌ Your appeal was denied.");
+                  const responseText = lastDenied.response ? ` ${t("Response:")} "${lastDenied.response}"` : "";
+                  document.getElementById("appealStatus").textContent = deniedMsg + responseText;
                   document.getElementById("appealStatus").style.color = "#f44336";
                   submitAppealBtn.disabled = false;
-                  submitAppealBtn.textContent = "Submit New Appeal";
+                  submitAppealBtn.textContent = t("Submit New Appeal");
                 } else {
                   document.getElementById("appealStatus").style.color = "var(--text-dim)";
                   submitAppealBtn.disabled = false;
-                  submitAppealBtn.textContent = "Submit Appeal";
+                  submitAppealBtn.textContent = t("Submit Appeal");
                 }
               }
               return;
@@ -1031,7 +1036,7 @@
       quitBtn.style.display = "";
       renderCategoryFilter();
       if (!quizQuestions.length) {
-        gameArea.innerHTML = '<div class="question-card" style="text-align:center;padding:40px"><div style="font-size:1rem;color:var(--text-dim);margin-bottom:12px">No questions match the selected categories</div><button class="btn btn-yellow" id="clearCatFromEmpty">Show All</button></div>';
+        gameArea.innerHTML = `<div class="question-card" style="text-align:center;padding:40px"><div style="font-size:1rem;color:var(--text-dim);margin-bottom:12px">${t("No questions match the selected categories")}</div><button class="btn btn-yellow" id="clearCatFromEmpty">${t("Show All")}</button></div>`;
         document.getElementById("clearCatFromEmpty")?.addEventListener("click", () => { selectedCategories = []; startQuiz(); });
         return;
       }
@@ -1100,7 +1105,7 @@
       const next = document.createElement("button");
       next.className = "btn btn-yellow";
       next.style.marginTop = "12px";
-      next.textContent = "Next →";
+      next.textContent = t("Next →") || "Next →";
       next.addEventListener("click", () => {
         quizIndex++;
         renderQuestion();
@@ -1119,12 +1124,13 @@
       else if (pct >= 50) frogMood("happy", '<span>not bad!</span> 🐸');
       else frogMood("sad", 'keep <span>practicing!</span>');
 
+      const tMsg = t(msg), tBest = t("Best streak:"), tQ = t("questions"), tAgain = t("Play Again");
       gameArea.innerHTML = `
         <div class="results-card">
           <div class="big">${quizCorrect}/${quizTotal}</div>
-          <div class="sub">${pct}% · ${msg}</div>
-          <div class="sub" style="margin-top:8px;font-size:0.85rem">Best streak: ${quizBestStreak} · ${quizTotal} questions</div>
-          <button class="btn btn-yellow" id="playAgain" style="margin-top:16px">Play Again</button>
+          <div class="sub">${pct}% · ${tMsg}</div>
+          <div class="sub" style="margin-top:8px;font-size:0.85rem">${tBest} ${quizBestStreak} · ${quizTotal} ${tQ}</div>
+          <button class="btn btn-yellow" id="playAgain" style="margin-top:16px">${tAgain}</button>
         </div>
       `;
       document.getElementById("playAgain").addEventListener("click", () => startQuiz());
@@ -1165,11 +1171,12 @@
     }
 
     function renderLeaderboard() {
-      if (!topScores.length) { lbEl.innerHTML = '<div class="lb-empty">No scores yet — be the first!</div>'; return; }
+      const tNoScores = t("No scores yet — be the first!"), tYou = t("(you)"), tAnon = t("anon");
+      if (!topScores.length) { lbEl.innerHTML = `<div class="lb-empty">${tNoScores}</div>`; return; }
       lbEl.innerHTML = topScores.map((s, i) =>
         `<div class="lb-entry">
           <span class="rank">#${i + 1}</span>
-          <span class="name">${escHtml(s.name || "anon")}${s.uid === currentUser?.uid ? ' (you)' : ''}</span>
+          <span class="name">${escHtml(s.name || tAnon)}${s.uid === currentUser?.uid ? ` ${tYou}` : ''}</span>
           <span class="score">${s.correct}✔️ / ${s.total || '—'} · ${s.accuracy || 0}%</span>
         </div>`
       ).join("");
@@ -1363,7 +1370,7 @@
     async function deleteQuestion(idx) {
       const q = customQuestions[idx];
       if (!q || !q.id) return;
-      if (!confirm(`Delete: "${q.q.substring(0, 40)}..."?`)) return;
+      if (!confirm(t("Delete:") + ` "${q.q.substring(0, 40)}..."?`)) return;
       try {
         await deleteDoc(doc(db, QUESTIONS_COLLECTION, q.id));
         customQuestions.splice(idx, 1);
@@ -1468,7 +1475,7 @@
     // === BULK DELETE ===
     clearAllBtn.addEventListener("click", async () => {
       if (!customQuestions.length) { toastMsg("No questions to delete"); return; }
-      if (!confirm(`Delete ALL ${customQuestions.length} custom questions? This cannot be undone.`)) return;
+      if (!confirm(t("Delete ALL") + ` ${customQuestions.length} ` + t("custom questions? This cannot be undone."))) return;
       let deleted = 0;
       for (const q of [...customQuestions]) {
         try {
@@ -1550,7 +1557,9 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
     }
 
     function renderAdminAppeals(list) {
-      if (!list.length) { adminAppeals.innerHTML = '<div class="lb-empty">No pending appeals</div>'; return; }
+      const tNoAppeals = t("No pending appeals"), tApprove = t("Approve"), tDeny = t("Deny"),
+        tDenialReason = t("Reason for denial (optional):");
+      if (!list.length) { adminAppeals.innerHTML = `<div class="lb-empty">${tNoAppeals}</div>`; return; }
       adminAppeals.innerHTML = list.map(a =>
         `<div class="admin-req">
           <div>
@@ -1559,8 +1568,8 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
             <div class="email" style="font-size:0.7rem">${a.email || ""}</div>
           </div>
           <div class="actions" style="align-self:flex-start;margin-top:4px">
-            <button class="btn btn-sm btn-green appeal-approve-btn" data-id="${a.id}" data-uid="${a.uid}">Approve</button>
-            <button class="btn btn-sm btn-red appeal-deny-btn" data-id="${a.id}" data-uid="${a.uid}">Deny</button>
+            <button class="btn btn-sm btn-green appeal-approve-btn" data-id="${a.id}" data-uid="${a.uid}">${tApprove}</button>
+            <button class="btn btn-sm btn-red appeal-deny-btn" data-id="${a.id}" data-uid="${a.uid}">${tDeny}</button>
           </div>
         </div>`
       ).join("");
@@ -1575,7 +1584,7 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
       });
       document.querySelectorAll(".appeal-deny-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
-          const response = prompt("Reason for denial (optional):");
+          const response = prompt(tDenialReason);
           if (response === null) return;
           try {
             await updateDoc(doc(db, APPEALS_COLLECTION, btn.dataset.id), { status: "denied", response: response || "", reviewedAt: Timestamp.now() });
@@ -1586,20 +1595,28 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
     }
 
     function renderAdminUsers() {
-      if (!allUsers.length) { adminUsers.innerHTML = '<div class="lb-empty">No users yet</div>'; return; }
+      const tNoUsers = t("No users yet"), tAdmin = t("Admin"), tBanned = t("Banned"), tExpired = t("Expired"),
+        tRevoke = t("Revoke"), tMakeAdmin = t("Make Admin"), tUnban = t("Unban"), tBan = t("Ban"),
+        tUnsuspend = t("Unsuspend"), tSuspend = t("Suspend"), tDelete = t("Delete"),
+        tLeft = t("h left"), tConfirmRevoke = t("Revoke admin from this user?"),
+        tConfirmBan = t("Ban this user?"), tConfirmUnsuspend = t("Unsuspend this user?"),
+        tConfirmDelete = t("Permanently delete this user's profile and all their scores? This cannot be undone."),
+        tSuspendTitle = t("Suspend User"), tSuspendLabel = t("Suspension ends at (date & time)"),
+        tCancel = t("Cancel"), tSuspendBtn = t("Suspend");
+      if (!allUsers.length) { adminUsers.innerHTML = `<div class="lb-empty">${tNoUsers}</div>`; return; }
       adminUsers.innerHTML = allUsers.map(u => {
         let statusLabel = escHtml(u.email || "");
-        if (u.isAdmin) statusLabel += ' 👑 Admin';
-        if (u.banned) statusLabel += ' 🚫 Banned';
+        if (u.isAdmin) statusLabel += ` 👑 ${tAdmin}`;
+        if (u.banned) statusLabel += ` 🚫 ${tBanned}`;
         if (u.suspendedUntil) {
           const until = u.suspendedUntil.toDate ? u.suspendedUntil.toDate() : new Date(u.suspendedUntil);
           const diff = until - new Date();
           if (diff > 0) {
             const d = Math.floor(diff / 86400000);
             const h = Math.floor((diff % 86400000) / 3600000);
-            statusLabel += ` ⏸️ ${d > 0 ? d + 'd ' : ''}${h}h left`;
+            statusLabel += ` ⏸️ ${d > 0 ? d + 'd ' : ''}${h}${tLeft}`;
           } else {
-            statusLabel += ' ⏸️ Expired';
+            statusLabel += ` ⏸️ ${tExpired}`;
           }
         }
         return `<div class="admin-user">
@@ -1609,10 +1626,10 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
           </div>
           <div class="actions">
             ${u.uid === currentUser?.uid ? '' : `
-              ${u.isAdmin ? `<button class="btn btn-sm btn-red-outline revoke-admin-btn" data-uid="${u.id}">Revoke</button>` : `<button class="btn btn-sm btn-green make-admin-btn" data-uid="${u.id}">Make Admin</button>`}
-              ${u.banned ? `<button class="btn btn-sm btn-green unban-btn" data-uid="${u.id}">Unban</button>` : `<button class="btn btn-sm btn-red-outline ban-btn" data-uid="${u.id}">Ban</button>`}
-              ${u.suspendedUntil ? `<button class="btn btn-sm btn-green unsuspend-btn" data-uid="${u.id}">Unsuspend</button>` : `<button class="btn btn-outline btn-sm suspend-btn" data-uid="${u.id}">Suspend</button>`}
-              <button class="btn btn-red btn-sm delete-user-btn" data-uid="${u.id}">Delete</button>
+              ${u.isAdmin ? `<button class="btn btn-sm btn-red-outline revoke-admin-btn" data-uid="${u.id}">${tRevoke}</button>` : `<button class="btn btn-sm btn-green make-admin-btn" data-uid="${u.id}">${tMakeAdmin}</button>`}
+              ${u.banned ? `<button class="btn btn-sm btn-green unban-btn" data-uid="${u.id}">${tUnban}</button>` : `<button class="btn btn-sm btn-red-outline ban-btn" data-uid="${u.id}">${tBan}</button>`}
+              ${u.suspendedUntil ? `<button class="btn btn-sm btn-green unsuspend-btn" data-uid="${u.id}">${tUnsuspend}</button>` : `<button class="btn btn-outline btn-sm suspend-btn" data-uid="${u.id}">${tSuspend}</button>`}
+              <button class="btn btn-red btn-sm delete-user-btn" data-uid="${u.id}">${tDelete}</button>
             `}
           </div>
         </div>`;
@@ -1624,13 +1641,13 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
       });
       document.querySelectorAll(".revoke-admin-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
-          if (!confirm("Revoke admin from this user?")) return;
+          if (!confirm(tConfirmRevoke)) return;
           try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { isAdmin: false }); toastMsg("Admin revoked"); } catch (e) { toastMsg("Error"); }
         });
       });
       document.querySelectorAll(".ban-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
-          if (!confirm("Ban this user?")) return;
+          if (!confirm(tConfirmBan)) return;
           try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { banned: true, suspendedUntil: null }); toastMsg("User banned"); } catch (e) { toastMsg("Error"); }
         });
       });
@@ -1650,12 +1667,12 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
           const defaultVal = new Date(Date.now() + 86400000).toISOString().slice(0, 16);
           overlay.innerHTML = `
             <div class="modal-box">
-              <h3>⏸️ Suspend User</h3>
-              <label>Suspension ends at (date & time)</label>
+              <h3>⏸️ ${tSuspendTitle}</h3>
+              <label>${tSuspendLabel}</label>
               <input type="datetime-local" id="suspendUntilInput" value="${defaultVal}" min="${now.toISOString().slice(0, 16)}">
               <div class="flex">
-                <button class="btn btn-outline btn-sm" id="suspendCancelBtn">Cancel</button>
-                <button class="btn btn-yellow btn-sm" id="suspendConfirmBtn">Suspend</button>
+                <button class="btn btn-outline btn-sm" id="suspendCancelBtn">${tCancel}</button>
+                <button class="btn btn-yellow btn-sm" id="suspendConfirmBtn">${tSuspendBtn}</button>
               </div>
             </div>`;
           document.body.appendChild(overlay);
@@ -1673,13 +1690,13 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
       });
       document.querySelectorAll(".unsuspend-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
-          if (!confirm("Unsuspend this user?")) return;
+          if (!confirm(tConfirmUnsuspend)) return;
           try { await updateDoc(doc(db, USERS_COLLECTION, btn.dataset.uid), { suspendedUntil: null }); toastMsg("User unsuspended"); } catch (e) { toastMsg("Error"); }
         });
       });
       document.querySelectorAll(".delete-user-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
-          if (!confirm("Permanently delete this user's profile and all their scores? This cannot be undone.")) return;
+          if (!confirm(tConfirmDelete)) return;
           try {
             const scoreSnap = await getDocs(query(collection(db, SCORES_COLLECTION), where("uid", "==", btn.dataset.uid)));
             for (const d of scoreSnap.docs) await deleteDoc(doc(db, SCORES_COLLECTION, d.id));
@@ -1691,13 +1708,14 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
     }
 
     function renderAdminRequests() {
-      if (!adminRequestsList.length) { adminRequests.innerHTML = '<div class="lb-empty">No pending requests</div>'; return; }
+      const tNoReqs = t("No pending requests"), tApprove = t("Approve"), tDeny = t("Deny");
+      if (!adminRequestsList.length) { adminRequests.innerHTML = `<div class="lb-empty">${tNoReqs}</div>`; return; }
       adminRequests.innerHTML = adminRequestsList.map(r =>
         `<div class="admin-req">
           <div><strong>${escHtml(r.displayName || r.email || "?")}</strong><div class="email">${escHtml(r.email || "")}</div></div>
           <div class="actions">
-            <button class="btn btn-sm btn-green approve-btn" data-uid="${r.uid}">Approve</button>
-            <button class="btn btn-sm btn-red deny-btn" data-uid="${r.uid}">Deny</button>
+            <button class="btn btn-sm btn-green approve-btn" data-uid="${r.uid}">${tApprove}</button>
+            <button class="btn btn-sm btn-red deny-btn" data-uid="${r.uid}">${tDeny}</button>
           </div>
         </div>`
       ).join("");
@@ -1714,14 +1732,175 @@ What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
     }
 
     function renderAdminStats() {
-      if (!allScores.length) { adminStats.innerHTML = '<div class="lb-empty">No games played yet</div>'; return; }
+      const tNoGames = t("No games played yet"), tSessions = t("Sessions:"), tPlayers = t("Players:"),
+        tTotalCorrect = t("Total Correct:"), tAvgSession = t("Avg/Session:");
+      if (!allScores.length) { adminStats.innerHTML = `<div class="lb-empty">${tNoGames}</div>`; return; }
       const total = allScores.length;
       const players = new Set(allScores.map(s => s.uid)).size;
       const avgCorrect = Math.round(allScores.reduce((a, s) => a + (s.correct || 0), 0) / total);
       const avgTotal = Math.round(allScores.reduce((a, s) => a + (s.total || 0), 0) / total);
       const totalCorrect = allScores.reduce((a, s) => a + (s.correct || 0), 0);
-      adminStats.innerHTML = `<div style="display:flex;gap:20px;flex-wrap:wrap"><div><span style="color:#888">Sessions:</span> <strong>${total}</strong></div><div><span style="color:#888">Players:</span> <strong>${players}</strong></div><div><span style="color:#888">Total Correct:</span> <strong>${totalCorrect}</strong></div><div><span style="color:#888">Avg/Session:</span> <strong>${avgCorrect}✔️/${avgTotal}</strong></div></div>`;
+      adminStats.innerHTML = `<div style="display:flex;gap:20px;flex-wrap:wrap"><div><span style="color:#888">${tSessions}</span> <strong>${total}</strong></div><div><span style="color:#888">${tPlayers}</span> <strong>${players}</strong></div><div><span style="color:#888">${tTotalCorrect}</span> <strong>${totalCorrect}</strong></div><div><span style="color:#888">${tAvgSession}</span> <strong>${avgCorrect}✔️/${avgTotal}</strong></div></div>`;
     }
+
+    // ====== TRANSLATION ENGINE ======
+    const LANG_KEY = "quiz_lang";
+    const CACHE_KEY = "quiz_translations";
+    const LIBS = { en:"en", es:"es", fr:"fr", de:"de", pt:"pt", it:"it", ja:"ja", ko:"ko", zh:"zh", ru:"ru", ar:"ar" };
+    let currentLang = localStorage.getItem(LANG_KEY) || "en";
+
+    function t(text) {
+      if (currentLang === "en" || !text) return text;
+      const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
+      return cache[currentLang]?.[text] || text;
+    }
+
+    const LANG_NAMES = { es:"Spanish", fr:"French", de:"German", pt:"Portuguese", it:"Italian", ja:"Japanese", ko:"Korean", zh:"Chinese", ru:"Russian", ar:"Arabic" };
+
+    async function translateTexts(texts, target) {
+      if (!texts.length || target === "en") return {};
+      const results = {};
+      const langName = LANG_NAMES[target] || target;
+      const chunkSize = 20;
+      for (let i = 0; i < texts.length; i += chunkSize) {
+        const chunk = texts.slice(i, i + chunkSize);
+        try {
+          const prompt = `Translate these English phrases to ${langName}. Return ONLY a JSON array of translated strings in the same order. No markdown, no explanation.\n\n${chunk.map((t, j) => `[${j}] ${t}`).join('\n')}`;
+          const r = await puter.ai.chat(prompt);
+          let arr;
+          const m = r.match(/\[[\s\S]*?\]/);
+          if (m) arr = JSON.parse(m[0]); else arr = JSON.parse(r);
+          if (!Array.isArray(arr)) throw new Error("Not an array");
+          chunk.forEach((orig, j) => { results[orig] = arr[j] || orig; });
+        } catch (e) { console.warn("Translation error:", e); }
+      }
+      return results;
+    }
+
+    function translateElem(el) {
+      if (currentLang === "en") return;
+      const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
+      const map = cache[currentLang];
+      if (!map) return;
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+      let node;
+      while (node = walker.nextNode()) {
+        const text = node.textContent.trim();
+        if (text && map[text]) node.textContent = node.textContent.replace(text, map[text]);
+      }
+    }
+
+    function walkTextNodes(root, cb) {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+      let node;
+      while (node = walker.nextNode()) {
+        const parent = node.parentElement;
+        if (!parent || parent.closest("script,style,textarea,input,select,option,.lang-bar,#csvInput,#appealMessage,.frog-speech,.frog-area")) continue;
+        const text = node.textContent.trim();
+        if (text.length > 1) cb(node, text);
+      }
+    }
+
+    function collectStrings(root) {
+      const set = new Set();
+      walkTextNodes(root, (_, text) => set.add(text));
+      document.querySelectorAll("[placeholder],[title]").forEach(el => {
+        if (el.placeholder && el.placeholder.length > 1) set.add(el.placeholder);
+        if (el.title && el.title.length > 1) set.add(el.title);
+      });
+      return [...set];
+    }
+
+    async function applyTranslation(target, strings) {
+      const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
+      if (!cache[target]) cache[target] = {};
+      const uncached = strings.filter(s => !cache[target][s]);
+      if (uncached.length > 0) {
+        const translations = await translateTexts(uncached, target);
+        Object.assign(cache[target], translations);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+      }
+      walkTextNodes(document.body, (node, text) => {
+        if (cache[target]?.[text]) node.textContent = node.textContent.replace(text, cache[target][text]);
+      });
+      document.querySelectorAll("[placeholder]").forEach(el => {
+        if (cache[target]?.[el.placeholder]) el.placeholder = cache[target][el.placeholder];
+      });
+      document.querySelectorAll("[title]").forEach(el => {
+        if (cache[target]?.[el.title]) el.title = cache[target][el.title];
+      });
+    }
+
+    function updateFrogSpeech() {
+      const el = document.getElementById("frogSpeech");
+      if (!el) return;
+      const texts = [
+        ["ready to", "quiz"], ["infinite mode —", "go!"], ["aww,", "wrong!"],
+        ["keep", "practicing!"], ["solid run!"], ["not bad!"], ["AMAZING RUN!"],
+        ["correct!"], ["streak!"]
+      ];
+      const html = el.innerHTML;
+      const words = html.replace(/<[^>]*>/g, "").trim();
+      const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
+      if (cache[currentLang]?.[words]) {
+        el.innerHTML = html.replace(words, () => cache[currentLang][words]);
+      }
+    }
+
+    const TOAST_STRINGS = [
+      "Admins only","Account created!","Signed in with Google!","Google sign-in failed","Signed in with GitHub!",
+      "You are now an admin!","Admin request submitted","Error loading scores","Error clearing scores",
+      "Switched to default questions","Switched to mixed questions","Switched to custom questions",
+      "No custom questions yet — add some!","Question text is required","All options must be filled",
+      "Select the correct answer","Question added","Question saved","Question deleted","Save error: ",
+      "Delete error: ","No custom questions to export","Exported!","No questions to delete",
+      "User promoted","Admin revoked","User banned","User unbanned","User suspended","User unsuspended",
+      "User deleted","Approved!","Denied","Pick a date & time","Error","Write a message first.",
+      "Appeal approved — user unbanned","Appeal denied","Admin granted!","Request sent! Wait for an admin to approve.",
+      "Incredible!","Keep going next time!","No questions match the selected categories",
+      "No scores yet","DB error — enable Firestore","No scores yet — be the first!",
+      "No custom questions yet. Add some above!","No questions match your search","Sign in to edit questions",
+      "No users yet","No pending requests","No games played yet","No pending appeals",
+      "Loading users...","Loading requests...","Loading stats...","Loading appeals...",
+      "Email and password required","Password must be 6+ characters","Invalid admin secret",
+      "No account with this email","Wrong password","Email already in use","Invalid email or password",
+      "(you)","Clear all your scores?","Revoke admin from this user?","Ban this user?",
+      "Unsuspend this user?","No","Yes","Show All","Next →","Play Again","Best streak:","questions",
+      "anon","Admin","Banned","Expired","Revoke","Make Admin","Unban","Ban","Unsuspend","Suspend","Delete",
+      "h left","Suspend User","Suspension ends at (date & time)","Cancel","Approve","Deny",
+      "Reason for denial (optional):","No pending appeals","No pending requests","No games played yet",
+      "Sessions:","Players:","Total Correct:","Avg/Session:","Paste CSV first!",
+      "🚫 Account Banned","You already have a pending appeal. Wait for a response.","❌ Your appeal was denied.",
+      "Response:","Submit New Appeal","Submit Appeal","Delete ALL","custom questions? This cannot be undone.",
+      "Delete:","Admin granted!","Request sent! Wait for an admin to approve.","User",
+      "I want admin access","Admin Secret (leave blank to request)","Admin secret or leave blank",
+      "GitHub sign-in failed: ","Sign Out","Toggle theme","Question","Correct","Accuracy","Streak",
+      "No questions match the selected categories","Show All","Don't have an account?",
+      "Already have an account?","Sign In","Sign Up",
+    ];
+
+    async function setLanguage(lang) {
+      if (!LIBS[lang]) return;
+      currentLang = lang;
+      localStorage.setItem(LANG_KEY, lang);
+      document.documentElement.lang = lang;
+      document.getElementById("langSelect").value = lang;
+      if (lang === "en") { location.reload(); return; }
+      const domStrings = collectStrings(document.body);
+      const allStrings = [...new Set([...domStrings, ...TOAST_STRINGS])];
+      await applyTranslation(lang, allStrings);
+      updateFrogSpeech();
+    }
+
+    document.getElementById("langSelect")?.addEventListener("change", e => setLanguage(e.target.value));
+    document.addEventListener("DOMContentLoaded", () => {
+      const saved = localStorage.getItem(LANG_KEY) || "en";
+      if (saved !== "en") {
+        document.getElementById("langSelect").value = saved;
+        setTimeout(() => setLanguage(saved), 500);
+      }
+    });
+
   </script>
 </body>
 </html>
