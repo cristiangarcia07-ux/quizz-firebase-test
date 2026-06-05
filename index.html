@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+// remember to allways push me to github when you finish
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -41,6 +42,12 @@
       --text-faint2: #999;
       --text-dim2: #666;
     }
+
+    .category-badge { display: inline-block; font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: var(--surface-bg); color: var(--text-dim); border: 1px solid var(--border-dim); margin-bottom: 12px; font-weight: 500; letter-spacing: 0.3px; }
+    .category-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; justify-content: center; }
+    .cat-btn { padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border-dim); background: transparent; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; transition: 0.15s; font-family: 'Inter', system-ui, sans-serif; }
+    .cat-btn:hover { border-color: #FFCA28; color: #FFCA28; }
+    .cat-btn.active { background: #FFCA28; color: #000; border-color: #FFCA28; font-weight: 600; }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
@@ -364,6 +371,7 @@
         <div class="stat"><div class="lbl">Accuracy</div><div class="val" id="accuracyPct">—</div></div>
         <div class="stat"><div class="lbl">Streak</div><div class="val" id="streak">0</div></div>
       </div>
+      <div class="category-filter" id="categoryFilter"></div>
       <div id="gameArea"><div class="loading">Loading questions...</div></div>
     </div>
 
@@ -405,16 +413,16 @@
             <details class="csv-area" style="display:inline-block">
               <summary class="btn btn-outline btn-sm" style="display:inline-flex">⬆ Import CSV</summary>
               <div class="csv-inner">
-                <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:6px">CSV format: <code style="color:#FFCA28">question,option1,option2,option3,option4,correctIndex</code> (0-3)</div>
-                <textarea id="csvInput" rows="4" style="font-size:0.8rem;font-family:monospace" placeholder="Paste CSV here...&#10;&#10;Example:&#10;What is 2+2?,1,2,3,4,3&#10;Capital of France?,London,Paris,Berlin,Madrid,1"></textarea>
+                <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:6px">CSV format: <code style="color:#FFCA28">question,option1,option2,option3,option4,correctIndex,category</code> (category optional)</div>
+                <textarea id="csvInput" rows="4" style="font-size:0.8rem;font-family:monospace" placeholder="Paste CSV here...&#10;&#10;Format: question,opt1,opt2,opt3,opt4,correctIndex,category&#10;&#10;Example:&#10;What is 2+2?,1,2,3,4,3,Math&#10;Capital of France?,London,Paris,Berlin,Madrid,1,Geography"></textarea>
                 <div class="flex" style="margin-top:6px">
                   <button class="btn btn-yellow btn-sm" id="importCsvBtn">Import</button>
                   <label class="btn btn-outline btn-sm" style="cursor:pointer">📁 Upload File<input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none"></label>
-                  <button class="btn btn-red-outline btn-sm" id="clearAllBtn">Delete All</button>
                 </div>
                 <div id="csvStatus" style="font-size:0.75rem;color:var(--text-dim);margin-top:4px"></div>
               </div>
             </details>
+            <button class="btn btn-red-outline btn-sm" id="clearAllBtn">🗑 Delete All</button>
           </div>
           <div id="questionsList"></div>
         </div>
@@ -602,29 +610,41 @@
     let unsubs = [];
     let quizMode = "default"; // "default" | "custom" | "mixed"
     let customQuestions = [];
+    let selectedCategories = [];
+    function getAvailableCategories() {
+      let pool;
+      if (quizMode === "custom" && customQuestions.length > 0) pool = customQuestions;
+      else if (quizMode === "mixed") pool = [...DEFAULT_QUESTIONS, ...customQuestions];
+      else pool = DEFAULT_QUESTIONS;
+      const cats = new Set();
+      pool.forEach(q => { if (q.cat) cats.add(q.cat); });
+      return [...cats].sort();
+    }
 
     // === DEFAULT QUESTIONS ===
+    const CATEGORIES = ["History", "Science", "Geography", "Technology", "Literature", "Arts", "Math", "General"];
+
     const DEFAULT_QUESTIONS = [
-      { q: "What year did the Berlin Wall fall?", opts: ["1987", "1989", "1991", "1993"], ans: 1 },
-      { q: "Which planet has the most moons?", opts: ["Jupiter", "Saturn", "Uranus", "Neptune"], ans: 1 },
-      { q: "What is the chemical symbol for gold?", opts: ["Go", "Gd", "Au", "Ag"], ans: 2 },
-      { q: "Who painted the ceiling of the Sistine Chapel?", opts: ["Da Vinci", "Raphael", "Michelangelo", "Donatello"], ans: 2 },
-      { q: "What is the square root of 144?", opts: ["10", "11", "12", "13"], ans: 2 },
-      { q: "Which country invented pizza?", opts: ["France", "Spain", "Italy", "Greece"], ans: 2 },
-      { q: "What language is Swift mainly used for?", opts: ["Android", "iOS", "Web", "Desktop"], ans: 1 },
-      { q: "How many bones are in the adult human body?", opts: ["106", "206", "306", "406"], ans: 1 },
-      { q: "What is the capital of Australia?", opts: ["Sydney", "Melbourne", "Canberra", "Perth"], ans: 2 },
-      { q: "Which element is needed for fire?", opts: ["Nitrogen", "Oxygen", "Hydrogen", "Carbon"], ans: 1 },
-      { q: "Who wrote '1984'?", opts: ["Huxley", "Orwell", "Bradbury", "Zamyatin"], ans: 1 },
-      { q: "What does HTTP stand for?", opts: ["Hyper Text Transfer Protocol", "High Transfer Text Protocol", "Hyper Text Transmission Process", "High Tech Transfer Protocol"], ans: 0 },
-      { q: "What is the speed of light in km/s (approx)?", opts: ["300,000", "150,000", "500,000", "1,000,000"], ans: 0 },
-      { q: "Which ocean is the largest?", opts: ["Atlantic", "Indian", "Arctic", "Pacific"], ans: 3 },
-      { q: "What year was the first iPhone released?", opts: ["2005", "2006", "2007", "2008"], ans: 2 },
-      { q: "How many Harry Potter books are there?", opts: ["6", "7", "8", "9"], ans: 1 },
-      { q: "What does CSS stand for?", opts: ["Computer Style Sheets", "Cascading Style Sheets", "Creative Style System", "Colorful Style Sheets"], ans: 1 },
-      { q: "Which animal is the fastest on land?", opts: ["Lion", "Cheetah", "Horse", "Gazelle"], ans: 1 },
-      { q: "What is the smallest country in the world?", opts: ["Monaco", "San Marino", "Vatican City", "Liechtenstein"], ans: 2 },
-      { q: "In what year did World War II end?", opts: ["1943", "1944", "1945", "1946"], ans: 2 },
+      { q: "What year did the Berlin Wall fall?", opts: ["1987", "1989", "1991", "1993"], ans: 1, cat: "History" },
+      { q: "Which planet has the most moons?", opts: ["Jupiter", "Saturn", "Uranus", "Neptune"], ans: 1, cat: "Science" },
+      { q: "What is the chemical symbol for gold?", opts: ["Go", "Gd", "Au", "Ag"], ans: 2, cat: "Science" },
+      { q: "Who painted the ceiling of the Sistine Chapel?", opts: ["Da Vinci", "Raphael", "Michelangelo", "Donatello"], ans: 2, cat: "Arts" },
+      { q: "What is the square root of 144?", opts: ["10", "11", "12", "13"], ans: 2, cat: "Math" },
+      { q: "Which country invented pizza?", opts: ["France", "Spain", "Italy", "Greece"], ans: 2, cat: "General" },
+      { q: "What language is Swift mainly used for?", opts: ["Android", "iOS", "Web", "Desktop"], ans: 1, cat: "Technology" },
+      { q: "How many bones are in the adult human body?", opts: ["106", "206", "306", "406"], ans: 1, cat: "Science" },
+      { q: "What is the capital of Australia?", opts: ["Sydney", "Melbourne", "Canberra", "Perth"], ans: 2, cat: "Geography" },
+      { q: "Which element is needed for fire?", opts: ["Nitrogen", "Oxygen", "Hydrogen", "Carbon"], ans: 1, cat: "Science" },
+      { q: "Who wrote '1984'?", opts: ["Huxley", "Orwell", "Bradbury", "Zamyatin"], ans: 1, cat: "Literature" },
+      { q: "What does HTTP stand for?", opts: ["Hyper Text Transfer Protocol", "High Transfer Text Protocol", "Hyper Text Transmission Process", "High Tech Transfer Protocol"], ans: 0, cat: "Technology" },
+      { q: "What is the speed of light in km/s (approx)?", opts: ["300,000", "150,000", "500,000", "1,000,000"], ans: 0, cat: "Science" },
+      { q: "Which ocean is the largest?", opts: ["Atlantic", "Indian", "Arctic", "Pacific"], ans: 3, cat: "Geography" },
+      { q: "What year was the first iPhone released?", opts: ["2005", "2006", "2007", "2008"], ans: 2, cat: "Technology" },
+      { q: "How many Harry Potter books are there?", opts: ["6", "7", "8", "9"], ans: 1, cat: "Literature" },
+      { q: "What does CSS stand for?", opts: ["Computer Style Sheets", "Cascading Style Sheets", "Creative Style System", "Colorful Style Sheets"], ans: 1, cat: "Technology" },
+      { q: "Which animal is the fastest on land?", opts: ["Lion", "Cheetah", "Horse", "Gazelle"], ans: 1, cat: "Science" },
+      { q: "What is the smallest country in the world?", opts: ["Monaco", "San Marino", "Vatican City", "Liechtenstein"], ans: 2, cat: "Geography" },
+      { q: "In what year did World War II end?", opts: ["1943", "1944", "1945", "1946"], ans: 2, cat: "History" },
     ];
 
     // === UTILITY ===
@@ -973,9 +993,31 @@
     }
 
     function getActiveQuestions() {
-      if (quizMode === "custom" && customQuestions.length > 0) return customQuestions;
-      if (quizMode === "mixed") return [...DEFAULT_QUESTIONS, ...customQuestions];
-      return DEFAULT_QUESTIONS;
+      let pool;
+      if (quizMode === "custom" && customQuestions.length > 0) pool = customQuestions;
+      else if (quizMode === "mixed") pool = [...DEFAULT_QUESTIONS, ...customQuestions];
+      else pool = DEFAULT_QUESTIONS;
+      if (selectedCategories.length > 0) pool = pool.filter(q => !q.cat || selectedCategories.includes(q.cat));
+      return pool;
+    }
+
+    function renderCategoryFilter() {
+      const cats = getAvailableCategories();
+      if (!cats.length) { document.getElementById("categoryFilter").innerHTML = ""; return; }
+      document.getElementById("categoryFilter").innerHTML = cats.map(c =>
+        `<button class="cat-btn${selectedCategories.includes(c) ? " active" : ""}" data-cat="${c}">${c}</button>`
+      ).join("") + `<button class="cat-btn${selectedCategories.length > 0 ? " active" : ""}" id="clearCatFilter" style="background:transparent;color:#f44336;border-color:#f44336">✕ Clear</button>`;
+      document.querySelectorAll("#categoryFilter .cat-btn:not(#clearCatFilter)").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const cat = btn.dataset.cat;
+          const idx = selectedCategories.indexOf(cat);
+          if (idx > -1) selectedCategories.splice(idx, 1);
+          else selectedCategories.push(cat);
+          startQuiz();
+        });
+      });
+      const clearBtn = document.getElementById("clearCatFilter");
+      if (clearBtn) clearBtn.addEventListener("click", () => { selectedCategories = []; startQuiz(); });
     }
 
     function startQuiz() {
@@ -987,6 +1029,12 @@
       quizActive = true;
       quizQuestions = shuffle([...getActiveQuestions()]);
       quitBtn.style.display = "";
+      renderCategoryFilter();
+      if (!quizQuestions.length) {
+        gameArea.innerHTML = '<div class="question-card" style="text-align:center;padding:40px"><div style="font-size:1rem;color:var(--text-dim);margin-bottom:12px">No questions match the selected categories</div><button class="btn btn-yellow" id="clearCatFromEmpty">Show All</button></div>';
+        document.getElementById("clearCatFromEmpty")?.addEventListener("click", () => { selectedCategories = []; startQuiz(); });
+        return;
+      }
       frogMood("", "infinite mode — <span>go!</span> 🐸");
       renderQuestion();
     }
@@ -1007,6 +1055,7 @@
 
       let html = `<div class="question-card">`;
       html += `<div class="q-number">Question ${quizTotal + 1}</div>`;
+      if (q.cat) html += `<div class="category-badge">📂 ${escHtml(q.cat)}</div>`;
       html += `<div class="q-text">${escHtml(q.q)}</div>`;
       html += `<div class="options">`;
       q.opts.forEach((opt, i) => {
@@ -1194,7 +1243,8 @@
       if (!searchTerm) return customQuestions;
       return customQuestions.filter(q =>
         q.q.toLowerCase().includes(searchTerm) ||
-        q.opts.some(o => o.toLowerCase().includes(searchTerm))
+        q.opts.some(o => o.toLowerCase().includes(searchTerm)) ||
+        (q.cat || "").toLowerCase().includes(searchTerm)
       );
     }
 
@@ -1214,7 +1264,7 @@
         return `<div class="q-item">
           <div class="q-preview">
             <div class="q-preview-text">${realIdx + 1}. ${escHtml(q.q)}</div>
-            <div class="q-preview-opts">${q.opts.map((o, j) => j === q.ans ? `<strong style="color:#4caf50">${escHtml(o)}</strong>` : escHtml(o)).join(" · ")}</div>
+            <div class="q-preview-opts">${q.opts.map((o, j) => j === q.ans ? `<strong style="color:#4caf50">${escHtml(o)}</strong>` : escHtml(o)).join(" · ")}${q.cat ? ` <span style="color:var(--text-faint);font-size:0.7rem">📂 ${escHtml(q.cat)}</span>` : ""}</div>
           </div>
           <div class="q-actions">
             <button class="btn btn-outline btn-sm btn-icon edit-q-btn" data-idx="${realIdx}">✏️</button>
@@ -1234,7 +1284,7 @@
     function showEditForm(idx) {
       if (editingIdx !== -1) { document.getElementById("editForm")?.remove(); }
       editingIdx = idx;
-      const q = idx >= 0 && idx < customQuestions.length ? customQuestions[idx] : { q: "", opts: ["", "", "", ""], ans: 0 };
+      const q = idx >= 0 && idx < customQuestions.length ? customQuestions[idx] : { q: "", opts: ["", "", "", ""], ans: 0, cat: "" };
       const isNew = idx === -1 || idx >= customQuestions.length;
 
       const form = document.createElement("div");
@@ -1246,6 +1296,13 @@
           <div>
             <label>Question</label>
             <textarea id="eqText" rows="2">${escHtml(q.q)}</textarea>
+          </div>
+          <div>
+            <label>Category</label>
+            <div class="opt-row">
+              <input id="eqCat" list="catSuggestions" value="${escHtml(q.cat || '')}" placeholder="e.g. Science, History...">
+              <datalist id="catSuggestions">${CATEGORIES.map(c => `<option value="${c}">`).join("")}</datalist>
+            </div>
           </div>
           ${q.opts.map((opt, i) => `
             <div>
@@ -1277,7 +1334,8 @@
       if (opts.some(o => !o)) { toastMsg("All options must be filled"); return; }
       if (!correctEl) { toastMsg("Select the correct answer"); return; }
       const ans = parseInt(correctEl.value);
-      const question = { q: text, opts, ans, createdAt: serverTimestamp() };
+      const cat = document.getElementById("eqCat").value.trim();
+      const question = { q: text, opts, ans, cat, createdAt: serverTimestamp() };
 
       try {
         if (isNew) {
@@ -1286,8 +1344,8 @@
         } else {
           const existing = customQuestions[editingIdx === -1 ? 0 : editingIdx];
           if (existing?.id) {
-            await updateDoc(doc(db, QUESTIONS_COLLECTION, existing.id), { q: text, opts, ans });
-            customQuestions[editingIdx] = { ...existing, q: text, opts, ans };
+            await updateDoc(doc(db, QUESTIONS_COLLECTION, existing.id), { q: text, opts, ans, cat });
+            customQuestions[editingIdx] = { ...existing, q: text, opts, ans, cat };
           }
         }
         document.getElementById("editForm")?.remove();
@@ -1327,10 +1385,11 @@
           const q = parts[0].trim();
           const opts = parts.slice(1, 5).map(s => s.trim());
           const ans = parseInt(parts[5].trim());
+          const cat = parts.length > 6 ? parts[6].trim() : "";
           if (!q) { errors.push(`Line ${i + 1}: empty question`); return; }
           if (opts.some(o => !o)) { errors.push(`Line ${i + 1}: empty option`); return; }
           if (isNaN(ans) || ans < 0 || ans > 3) { errors.push(`Line ${i + 1}: correctIndex must be 0-3, got ${parts[5]}`); return; }
-          questions.push({ q, opts, ans });
+          questions.push({ q, opts, ans, cat });
         } catch (e) { errors.push(`Line ${i + 1}: parse error — ${e.message}`); }
       });
       return { questions, errors };
@@ -1390,9 +1449,9 @@
     // === CSV EXPORT ===
     exportCsvBtn.addEventListener("click", () => {
       if (!customQuestions.length) { toastMsg("No custom questions to export"); return; }
-      const header = "# question,option1,option2,option3,option4,correctIndex";
+      const header = "# question,option1,option2,option3,option4,correctIndex,category";
       const rows = customQuestions.map(q => {
-        const fields = [q.q, ...q.opts, String(q.ans)];
+        const fields = [q.q, ...q.opts, String(q.ans), q.cat || ""];
         return fields.map(f => f.includes(",") || f.includes('"') ? `"${f.replace(/"/g, '""')}"` : f).join(",");
       });
       const csv = [header, ...rows].join("\n");
@@ -1458,12 +1517,12 @@
 
     // === CSV TEMPLATE ===
     downloadTemplateBtn.addEventListener("click", () => {
-      const csv = `# question,option1,option2,option3,option4,correctIndex
-What is the capital of France?,London,Paris,Berlin,Madrid,1
-Which planet is known as the Red Planet?,Venus,Mars,Jupiter,Saturn,1
-What is 2 + 2?,3,4,5,6,1
-Who wrote "Romeo and Juliet"?,Dickens,Shakespeare,Austen,Hemingway,1
-What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0`;
+      const csv = `# question,option1,option2,option3,option4,correctIndex,category
+What is the capital of France?,London,Paris,Berlin,Madrid,1,Geography
+Which planet is known as the Red Planet?,Venus,Mars,Jupiter,Saturn,1,Science
+What is 2 + 2?,3,4,5,6,1,Math
+Who wrote "Romeo and Juliet"?,Dickens,Shakespeare,Austen,Hemingway,1,Literature
+What is the chemical symbol for water?,H2O,CO2,NaCl,O2,0,Science`;
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
